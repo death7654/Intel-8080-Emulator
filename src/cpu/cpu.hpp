@@ -1,4 +1,4 @@
-#include "../common.h"s
+#include "../common.h"
 
 
 // flags: bits 5 and 3 are always 0, bit 1 is always 1
@@ -41,14 +41,14 @@ public:
     u8 get_f();
 
     // set reg values
-    u8 set_a();
-    u8 set_b();
-    u8 set_c();
-    u8 set_d();
-    u8 set_e();
-    u8 set_h();
-    u8 set_l();
-    u8 set_f();
+    void set_a(u8 data);
+    void set_b(u8 data);
+    void set_c(u8 data);
+    void set_d(u8 data);
+    void set_e(u8 data);
+    void set_h(u8 data);
+    void set_l(u8 data);
+    void set_f(u8 data);
 
 
     // 16 bit regs
@@ -56,9 +56,9 @@ public:
     u16 get_de();
     u16 get_hl();
 
-    u16 set_bc();
-    u16 set_de();
-    u16 set_hl();
+    void set_bc(u16 data);
+    void set_de(u16 data);
+    void set_hl(u16 data);
 
     // input output
     u8 get_input();
