@@ -71,5 +71,17 @@ u16 cpu::pop()
     return (higher << 8) | lower;
 }
 
+u8 cpu::fetch()
+{
+    u8 instruction = ram->read(pc);
+    pc++;
+    return instruction;
+}
+
+void cpu::execute(u8 instruction)
+{
+
+}
+
 
 

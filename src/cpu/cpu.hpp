@@ -75,6 +75,10 @@ public:
     void push(u16 data);
     u16 pop();
 
+    // fetch - execute
+    u8 fetch();
+    void execute(u8 instruction);
+
     
 
 };
