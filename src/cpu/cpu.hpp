@@ -1,4 +1,5 @@
 #include "../common.h"
+#include "memory.hpp"
 
 
 // flags: bits 5 and 3 are always 0, bit 1 is always 1
@@ -26,8 +27,10 @@ private:
 
     u8 input;
     u8 output;
+    memory* ram;
+
 public:
-    cpu(/* args */);
+    cpu(memory* mem); 
     ~cpu();
 
     // get reg values
@@ -64,11 +67,19 @@ public:
     u8 get_input();
     u8 get_output();
 
-    u8 set_input();
-    u8 set_output();
+    void set_input();
+    void set_output();
+
+    // stack
+
+    void push(u16 data);
+    u16 pop();
+
+    
+
 };
 
-cpu::cpu(/* args */)
+cpu::cpu(memory* mem) : ram(mem)
 {
 }
 

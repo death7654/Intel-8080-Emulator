@@ -1,4 +1,4 @@
-#include "../common.h"s
+#include "../common.h"
 
 class emulator
 {

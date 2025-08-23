@@ -51,5 +51,25 @@ set_register_16bit(b, c);
 set_register_16bit(d, e);
 set_register_16bit(h, l);
 
+void cpu::push(u16 data)
+{
+    u8 higher = (data >> 8) & 0xFF;
+    u8 lower = (data & 0xFF);
+    sp--;
+    ram->write(sp, higher);
+    sp--;
+    ram->write(sp-2, lower);
+}
+
+u16 cpu::pop()
+{
+    u8 lower = ram->read(sp);
+    sp++;
+    u8 higher = ram->read(sp);
+    sp++;
+
+    return (higher << 8) | lower;
+}
+
 
 
