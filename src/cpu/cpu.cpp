@@ -80,8 +80,58 @@ u8 cpu::fetch()
 
 void cpu::execute(u8 instruction)
 {
+    this->cycles += 4; // each instruction fetch uses 4 cycles
+    switch(instruction)
+    {
+        // NOP
+        case 0x00:
+            nop();
+            break;
+        // LXI
+        case 0x01:
+            lxi(this->b, this->c);
+            break;
+        case 0x02:
+            stax(this->b, this->c);
+            break;
+            
+
+    }
 
 }
+// do nothing instruction
+void cpu::nop()
+{
+    return;
+    // 4 cycles
+}
+
+// load eXtensible instruction (16 bit load)
+void cpu::lxi(u8 &high_byte, u8 &low_byte)
+{
+    low_byte = ram->read(this->pc + 1);
+    this->cycles +=3;
+
+    high_byte = ram->read(this->pc + 2);
+    this->cycles += 3;
+
+    this->pc += 2;
+
+    // 10 cycles
+}
+
+// store the accumulator at the address specifed by the highbyte and lowbyte
+void cpu::stax(u8 &high_byte, u8 &low_byte)
+{
+    u16 address = (static_cast<u16>(high_byte) << 8 )| low_byte;
+    u8 data = get_a();
+    ram->write(address, data);
+
+    this->cycles +=3; 
+
+    // 7 cycles
+}
+
 
 
 

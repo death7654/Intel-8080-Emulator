@@ -13,20 +13,22 @@ class cpu
 {
 
 private:
-    u8 a;
-    u8 b;
-    u8 c;
-    u8 d;
-    u8 e; 
-    u8 h;
-    u8 l;
-    u8 f;
+    u8 a = 0;
+    u8 b = 0;
+    u8 c = 0;
+    u8 d = 0;
+    u8 e = 0; 
+    u8 h = 0;
+    u8 l = 0;
+    u8 f = 0;
 
-    u16 sp;
-    u16 pc;
+    u16 sp = 0;
+    u16 pc = 0;
 
     u8 input;
     u8 output;
+
+    u64 cycles = 0;
     memory* ram;
 
 public:
@@ -79,12 +81,18 @@ public:
     u8 fetch();
     void execute(u8 instruction);
 
+    // opcodes
+    void nop();
+    void lxi(u8 &high_byte, u8 &low_byte);
+    void stax(u8 &high_byte, u8 &low_byte);
+
     
 
 };
 
 cpu::cpu(memory* mem) : ram(mem)
 {
+
 }
 
 cpu::~cpu()
