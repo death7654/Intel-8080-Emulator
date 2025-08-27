@@ -3,11 +3,11 @@
 
 
 // flags: bits 5 and 3 are always 0, bit 1 is always 1
-#define S_FLAG 1000_0010;
-#define Z_FLAG 0100_0010;
-#define A_FLAG 0001_0010;
-#define P_FLAG 0000_0110;
-#define C_FLAG 0000_0011;
+#define S_FLAG 0b10000010;
+#define Z_FLAG 0b01000010;
+#define A_FLAG 0b00010010;
+#define P_FLAG 0b00000110;
+#define C_FLAG 0b00000011;
 
 class cpu
 {
@@ -73,7 +73,6 @@ public:
     void set_output();
 
     // stack
-
     void push(u16 data);
     u16 pop();
 
@@ -81,12 +80,31 @@ public:
     u8 fetch();
     void execute(u8 instruction);
 
+    // set flags
+    void set_s_flag(u8 &reg);
+    void set_z_flag(u8 &reg);
+    void set_a_flag_add_type(u8 val1, u8 val2, bool is_increment);
+    void set_a_flag_sub_type(u8 val1, u8 val2, bool is_decrement);
+    void set_p_flag(u8 &reg);
+    void set_c_flag(bool condition);
+
     // opcodes
     void nop();
     void lxi(u8 &high_byte, u8 &low_byte);
     void stax(u8 &high_byte, u8 &low_byte);
+    void inx(u8 &high_byte, u8 &low_byte);
+    void inr(u8 &reg);
+    void dcr(u8 &reg);
+    void mvi(u8 &reg);
+    void rlc();
+    void dad(u8 &upper_a_reg, u8 &lower_a_reg);
+    void ldax(u8 &upper_reg, u8 &lower_reg);
+    void dcx(u8 &high_byte, u8 &low_byte);
 
+    void push(u8 &upper_reg, u8 &lower_reg);
+    void pop(u8 &upper_reg, u8 &lower_reg);
     
+
 
 };
 
