@@ -47,9 +47,19 @@ get_register_16bit(b, c);
 get_register_16bit(d, e);
 get_register_16bit(h, l);
 
+u16 cpu::get_sp()
+{
+    return this->sp;
+}
+
 set_register_16bit(b, c);
 set_register_16bit(d, e);
 set_register_16bit(h, l);
+
+void cpu::set_sp(u16 data)
+{
+    this->sp = data;
+}
 
 u8 cpu::fetch()
 {
@@ -63,11 +73,10 @@ void cpu::execute(u8 instruction)
     this->cycles += 4; // each instruction fetch uses 4 cycles
     switch (instruction)
     {
-    // NOP
+    // 0x00 -> 0x0F 
     case 0x00:
         nop();
         break;
-    // LXI
     case 0x01:
         lxi(this->b, this->c);
         break;
@@ -112,6 +121,122 @@ void cpu::execute(u8 instruction)
         break;
     case 0x0F:
         rrc();
+        break;
+    // 0x10 - 0x1F
+    case 0x10:
+        nop();
+        break;
+    case 0x11:
+        lxi(this->d, this->e);
+        break;
+    case 0x12:
+        stax(this->d, this->e);
+        break;
+    case 0x13:
+        inx(this->d, this->e);
+        break;
+    case 0x14:
+        inr(this->d);
+        break; 
+    case 0x15:
+        dcr(this->d);
+        break;
+    case 0x16:
+        mvi(this->d);
+        break;
+    case 0x17:
+        ral();
+        break;
+    case 0x18:
+        nop();
+        break;
+    case 0x19:
+        dad(this->d, this->e);
+        break;
+    case 0x1A:
+        ldax(this->d, this->e);
+        break;
+    case 0x1B:
+        dcx(this->d, this->e);
+        break;
+    case 0x1C:
+        inr(this->e);
+        break;
+    case 0x1D:
+        dcr(this->e);
+        break;
+    case 0x1E:
+        mvi(this->e);
+        break;
+    case 0x1F:
+        rar();
+        break;
+    // 0x20 => 0x2F
+    case 0x20:
+        nop();
+        break;
+    case 0x21:
+        lxi(this->h, this->f);
+        break;
+    case 0x22:
+        shld();
+        break;
+    case 0x23:
+        inx(this->h, this->l);
+        break;
+    case 0x24:
+        inr(this->h);
+        break;
+    case 0x25:
+        dcr(this->h);
+        break;
+    case 0x26:
+        mvi(this->h);
+        break;
+    case 0x27:
+        daa();
+        break;
+    case 0x28:
+        nop();
+        break;
+    case 0x29:  
+        dad(this->h, this->l);
+        break;
+    case 0x2A:
+        lhld();
+        break;
+    case 0x2B:
+        dcx(this->h, this->l);
+        break;
+    case 0x2C:
+        inr(this->l);   
+        break;
+    case 0x2D:
+        dcr(this->l);
+        break;
+    case 0x2E:
+        mvi(this->l);
+        break;
+    case 0x2F:
+        cma();
+        break;
+    //0x30 - 0x3F
+    case 0x30:
+        nop();
+        break;
+    case 0x31:
+        lxi_sp();
+        break;
+    case 0x32:
+        sta();
+        break;
+    case 0x33:
+        inx_sp();
+        break;
+    case 0x34:
+        
+    default:
+        printf("OPCODE not implemented %d", instruction);
         break;
     }
 }
@@ -245,12 +370,25 @@ void cpu::nop()
 // load eXtensible instruction (16 bit load)
 void cpu::lxi(u8 &high_byte, u8 &low_byte)
 {
-    low_byte = ram->read(this->pc + 1);
+    low_byte = ram->read(fetch());
     this->cycles += 3;
 
-    high_byte = ram->read(this->pc + 2);
+    high_byte = ram->read(fetch());
     this->cycles += 3;
     // 10 cycles
+}
+
+// load sp value from the next 2 bytes
+void cpu::lxi_sp()
+{
+    u8 sp_lower = ram->read(fetch());
+    this->cycles += 3;
+
+    u8 sp_upper = ram->read(fetch());
+    this->cycles += 3;
+
+    u16 data = (static_cast<u16>(sp_upper) << 8) | sp_lower;
+    set_sp(data);
 }
 
 // store the accumulator at the address specifed by the highbyte and lowbyte
@@ -272,6 +410,15 @@ void cpu::inx(u8 &high_byte, u8 &low_byte)
     high_byte = data >> 8;
     low_byte = data;
     this->cycles += 1;
+
+    // 5 cycles
+}
+
+void cpu::inx_sp()
+{
+    u16 sp = get_sp();
+    set_sp(sp + 1);
+    this->cycles += 1
 
     // 5 cycles
 }
@@ -305,8 +452,7 @@ void cpu::dcr(u8 &reg)
 // copy the intermediate value from memory onto a register
 void cpu::mvi(u8 &reg)
 {
-    u8 data = ram->read(this->pc);
-    this->pc++;
+    u8 data = fetch();
     reg = data;
     this->cycles += 3;
     // 7 cycles
@@ -372,8 +518,190 @@ void cpu::rrc()
     // takes 4 cycles
 }
 
+// treats the carry flag as the 9th bit and does a rotate left
+void cpu::ral()
+{
+    u8 a = get_a();
+    u8 msb = a & 0x80;
+    bool carry_flag = (get_f() & 0x01) != 0; 
+    a = a << 1;
 
+    if(carry_flag)
+    {
+        a |= 0x01;
+    }
+    set_a(a);
+
+    set_c_flag(msb != 0);
+    // takes 4 cycles
+}
+
+// treats the carry flag as the 9th bit and does a rotate right
+void cpu::rar()
+{
+    u8 a = get_a();
+    u8 lsb = a & 0x01;
+    bool original_carry_flag = (get_f() & 0x01) != 0;
+
+    a >>= 1;
+
+    if (original_carry_flag) {
+        a |= 0x80; 
+    } else {
+        a &= ~0x80;
+    }
+
+    set_a(a);
+
+    set_c_flag(lsb != 0);
+
+    // 4 cycles
+}
+
+// store the 16 bit register HL into memory
+void cpu::shld()
+{
+    u8 lower_address = fetch();
+    this->cycles += 3;
+
+    u8 upper_address = fetch();
+    this->cycles += 3;
+
+    u16 address = (static_cast<u16>(upper_address) << 8) | lower_address;
+
+    ram->write(address, this->l);
+    this->cycles += 3;
+
+    ram->write(address+1, this->h);
+    this->cycles += 3;
+
+    // 16 cycles
+}
+
+// converts a illegal bcd into legal bcd
+void cpu::daa()
+{
+    u8 old_a = get_a();       
+    u8 a = old_a;             
+    
+    u8 current_flags = get_f();
+    bool original_carry = (current_flags & 0x01) != 0;
+    bool original_aux_carry = (current_flags & 0b00010010) != 0;
+
+    
+    bool carry_set_by_daa_adjustment = false;
+    bool aux_carry_set_by_daa_adjustment = false;
+
+    
+    if ((a & 0x0F) > 0x09 || original_aux_carry)
+    {
+        a += 0x06; 
+        aux_carry_set_by_daa_adjustment = true; 
+    }
+
+    if ((a & 0xF0) > 0x90 || original_carry)
+    {
+        u16 temp_sum = (u16)a + 0x60; 
+        a = (u8)temp_sum;            
+        if (temp_sum > 0xFF) {
+            carry_set_by_daa_adjustment = true; 
+        }
+    }
+
+    set_a(a);
+
+    set_s_flag(this->a);
+    set_z_flag(this->a);
+    set_p_flag(this->a);
+
+    u8 final_flags = get_f(); 
+
+    if (aux_carry_set_by_daa_adjustment) {
+        final_flags |= A_FLAG; 
+    } else {
+        final_flags &= ~A_FLAG; 
+    }
+
+    if (carry_set_by_daa_adjustment) {
+        final_flags |= C_FLAG; 
+    } else {
+        if (original_carry) { 
+            final_flags |= C_FLAG;
+        } else {
+            final_flags &= ~C_FLAG; 
+        }
+    }
+    set_f(final_flags);
+
+    // 4 cycles
+}
+
+// loads memory into a specified address into 16 bit address HL
+void cpu::lhld()
+{
+    u8 lower = fetch();
+    this->cycles += 3;
+
+    u8 upper = fetch();
+    this->cycles +=3;
+
+    u16 address = (static_cast<u16>(upper) << 8) | lower;
+
+    set_l(ram->read(address));
+    this->cycles+=3;
+
+    set_h(ram->read(address + 1));
+    this->cycles += 3;
+
+    // 16 cycles
+
+}
 // push value from a 16 bit register onto stack
+
+// flips every bit in the accumlator
+void cpu::cma()
+{
+    set_a(~get_a());
+
+    // 4 cycles
+}
+
+// stores a in the address specified by the next 2 bytes
+void cpu::sta()
+{
+    u8 lower = fetch();
+    this->cycles += 3;
+
+    u8 upper = fetch();
+    this->cycles += 3;
+
+    u16 address = (static_cast<u16>(upper) << 8) | lower;
+
+    ram->write(address, get_a());
+    this->cycles += 3;
+
+    // 13 cycles
+}
+
+// sets carry flag to true
+void cpu::stc()
+{
+    set_c_flag(true);
+
+    // 4 cycles
+}
+
+// flips the carry bit
+void cpu::cmc()
+{
+    u8 flags = get_f();
+    flags ^= 0x01;
+    set_f(flags);
+
+    // 4 cycles
+}
+
+
 void cpu::push(u8 &upper_reg, u8 &lower_reg)
 {
     this->sp--;
@@ -396,4 +724,6 @@ void cpu::pop(u8 &upper_reg, u8 &lower_reg)
     this->cycles += 6;
     // 10 cycles
 }
+
+
 

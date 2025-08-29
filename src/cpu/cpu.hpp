@@ -60,10 +60,13 @@ public:
     u16 get_bc();
     u16 get_de();
     u16 get_hl();
+    u16 get_sp();
+
 
     void set_bc(u16 data);
     void set_de(u16 data);
     void set_hl(u16 data);
+    void set_sp(u16 data);
 
     // input output
     u8 get_input();
@@ -91,15 +94,27 @@ public:
     // opcodes
     void nop();
     void lxi(u8 &high_byte, u8 &low_byte);
+    void lxi_sp();
     void stax(u8 &high_byte, u8 &low_byte);
     void inx(u8 &high_byte, u8 &low_byte);
+    void inx_sp();
     void inr(u8 &reg);
     void dcr(u8 &reg);
     void mvi(u8 &reg);
     void rlc();
     void dad(u8 &upper_a_reg, u8 &lower_a_reg);
     void ldax(u8 &upper_reg, u8 &lower_reg);
-    void dcx(u8 &high_byte, u8 &low_byte);
+    void dcx(u8 &upper_reg, u8 &lower_reg);
+    void rrc();
+    void ral();
+    void rar();
+    void shld();
+    void daa();
+    void lhld();
+    void cma();
+    void sta();
+    void stc();
+    void cmc();
 
     void push(u8 &upper_reg, u8 &lower_reg);
     void pop(u8 &upper_reg, u8 &lower_reg);
