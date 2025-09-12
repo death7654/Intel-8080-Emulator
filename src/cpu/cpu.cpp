@@ -234,7 +234,42 @@ void cpu::execute(u8 instruction)
         inx_sp();
         break;
     case 0x34:
-        
+        inr_m();
+        break;
+    case 0x35:
+        dcr_m();
+        break;
+    case 0x36:
+        mvi_m();
+        break;
+    case 0x37:
+        stc();
+        break;
+    case 0x38:
+        nop();
+        break;
+    case 0x39:
+        dad_sp();
+        break;
+    case 0x3A:
+        lda();
+        break;
+    case 0x3B:
+        dcx_sp();
+        break;
+    case 0x3C:
+        inr(this->a);
+        break;
+    case 0x3D:
+        dcr(this->a);
+        break;
+    case 0x3E:
+        mvi(this->a);
+        break;
+    case 0x3F:
+        cmc();
+        break;
+    //0x40 -> 0x4F
     default:
         printf("OPCODE not implemented %d", instruction);
         break;
@@ -418,7 +453,7 @@ void cpu::inx_sp()
 {
     u16 sp = get_sp();
     set_sp(sp + 1);
-    this->cycles += 1
+    this->cycles += 1;
 
     // 5 cycles
 }
@@ -435,6 +470,28 @@ void cpu::inr(u8 &reg)
     this->cycles++;
     // 5 cycles
 }
+// increment memory
+void cpu::inr_m()
+{
+    u16 address = get_hl();
+
+    u8 old_data = ram->read(address);
+    this->cycles += 3;
+
+    u8 new_data = old_data + 1;
+    ram->write(address, new_data);
+    this->cycles += 3;
+
+    set_s_flag(new_data);
+    set_z_flag(new_data);
+    set_a_flag_add_type(old_data, new_data, true);
+    set_p_flag(new_data);
+
+
+
+    //10 cycles
+}
+
 // decrement an 8 bit register
 void cpu::dcr(u8 &reg)
 {
@@ -449,6 +506,27 @@ void cpu::dcr(u8 &reg)
     // 5 cycles
 }
 
+// decrement memory
+void cpu::dcr_m()
+{
+    u16 address = get_hl();
+
+    u8 old_data = ram->read(address);
+    this->cycles += 3;
+
+    u8 new_data = old_data - 1;
+    ram->write(address, new_data);
+    this->cycles += 3;
+
+    set_s_flag(new_data);
+    set_z_flag(new_data);
+    set_a_flag_sub_type(old_data, new_data, true);
+    set_p_flag(new_data);
+
+    // 10 cycles
+
+}
+
 // copy the intermediate value from memory onto a register
 void cpu::mvi(u8 &reg)
 {
@@ -456,6 +534,17 @@ void cpu::mvi(u8 &reg)
     reg = data;
     this->cycles += 3;
     // 7 cycles
+}
+
+void cpu::mvi_m()
+{
+    u16 address = get_hl();
+    u8 data = fetch();
+
+    ram->write(address, data);
+    this->cycles += 6;
+
+    // 10 cycles
 }
 
 // rotate the accumulator left
@@ -476,11 +565,28 @@ void cpu::dad(u8 &upper_a_reg, u8 &lower_a_reg)
     u16 b = get_hl();
     u32 result = a + b; // 32 bit to check for overflow
 
-    set_hl(static_cast<u16>(result));
+
     set_c_flag(result > 0xFFFF);
+
+    set_hl(static_cast<u16>(result));
 
     this->cycles += 6;
     // takes 10 cycles
+}
+
+// double add stack pointer
+void cpu::dad_sp()
+{
+    u16 sp = get_sp();
+    u16 hl = get_hl();
+    u32 result = sp + hl;
+
+    set_c_flag(result > 0xFFFF);
+
+    set_hl(static_cast<u16>(result));
+
+    this->cycles += 6;
+    // 10 cycles
 }
 
 // load data from memory at address found in 16 bit register pair
@@ -506,6 +612,14 @@ void cpu::dcx(u8 &upper_reg, u8 &lower_reg)
     // 6 cycles
 }
 
+// decrement sp
+void cpu::dcx_sp()
+{
+    u16 sp = get_sp();
+    sp--;
+    set_sp(sp);
+    this->cycles += 2;
+}
 // rotate accumulator right
 void cpu::rrc()
 {
@@ -699,6 +813,25 @@ void cpu::cmc()
     set_f(flags);
 
     // 4 cycles
+}
+
+// gets the address from rom, and sets a to the data held at that memory address
+void cpu::lda()
+{
+    u8 address_low = fetch();
+    this->cycles += 3;
+
+    u8 address_high = fetch();
+    this->cycles += 3;
+
+    u16 address = (static_cast<u16>(address_high << 8)) | address_low;
+    
+    u8 data = ram->read(address);
+    this->cycles += 3;
+
+    set_a(data);
+
+    // 13 cycles
 }
 
 

@@ -93,18 +93,35 @@ public:
 
     // opcodes
     void nop();
+
     void lxi(u8 &high_byte, u8 &low_byte);
     void lxi_sp();
+
     void stax(u8 &high_byte, u8 &low_byte);
+
     void inx(u8 &high_byte, u8 &low_byte);
     void inx_sp();
+
     void inr(u8 &reg);
+    void inr_m();
+
     void dcr(u8 &reg);
+    void dcr_m();
+
     void mvi(u8 &reg);
+    void mvi_m();
+
     void rlc();
+
     void dad(u8 &upper_a_reg, u8 &lower_a_reg);
+    void dad_sp();
+
     void ldax(u8 &upper_reg, u8 &lower_reg);
+    void lda();
+
     void dcx(u8 &upper_reg, u8 &lower_reg);
+    void dcx_sp();
+
     void rrc();
     void ral();
     void rar();
@@ -115,6 +132,7 @@ public:
     void sta();
     void stc();
     void cmc();
+    void lda();
 
     void push(u8 &upper_reg, u8 &lower_reg);
     void pop(u8 &upper_reg, u8 &lower_reg);
