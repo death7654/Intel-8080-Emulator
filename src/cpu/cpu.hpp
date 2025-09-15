@@ -28,6 +28,8 @@ private:
     u8 input;
     u8 output;
 
+    bool is_halted = false;
+
     u64 cycles = 0;
     memory* ram;
 
@@ -133,6 +135,14 @@ public:
     void stc();
     void cmc();
     void lda();
+
+    void mov(u8 &reg_a, u8 &reg_b);
+    void mov_rm(u8 &reg);
+    void mov_mr(u8 &reg);
+
+    void halt();
+
+    void add(u8 &reg);
 
     void push(u8 &upper_reg, u8 &lower_reg);
     void pop(u8 &upper_reg, u8 &lower_reg);

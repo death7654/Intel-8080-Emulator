@@ -270,6 +270,202 @@ void cpu::execute(u8 instruction)
         cmc();
         break;
     //0x40 -> 0x4F
+    case 0x40:
+        mov(this->b, this->b);
+        break;
+    case 0x41:
+        mov(this->b, this->c);
+        break;
+    case 0x42:
+        mov(this->b, this->d);
+        break;
+    case 0x43:
+        mov(this->b, this->e);
+        break;
+    case 0x44:
+        mov(this->b, this->h);
+        break;
+    case 0x45:
+        mov(this->b, this->l);
+        break;
+    case 0x46:
+        mov_rm(this->b);
+        break;
+    case 0x47:
+        mov(this->b, this->a);
+        break;
+    case 0x48:
+        mov(this->c, this->b);
+        break;
+    case 0x49:
+        mov(this->c, this->c);
+        break;
+    case 0x4A:
+        mov(this->c, this->d);
+        break;
+    case 0x4B:
+        mov(this->c, this->e);
+        break;
+    case 0x4C:
+        mov(this->c, this->h);
+        break;
+    case 0x4D:
+        mov(this->c, this->l);
+        break;
+    case 0x4E:
+        mov_rm(this->c);
+        break;
+    case 0x4F:
+        mov(this->c, this->a);
+        break;
+    //0x50 -> 0x5F
+    case 0x50:
+        mov(this->d, this->b);
+        break;
+    case 0x51:
+        mov(this->d, this->c);
+        break;
+    case 0x52:
+        mov(this->d, this->d);
+        break;
+    case 0x53:
+        mov(this->d, this->e);
+        break;
+    case 0x54:
+        mov(this->d, this->h);
+        break;
+    case 0x55:
+        mov(this->d, this->l);
+        break;
+    case 0x56:
+        mov_rm(this->d);
+        break;
+    case 0x57:
+        mov(this->d, this->a);
+        break;
+    case 0x58:
+        mov(this->e, this->b);
+        break;
+    case 0x59:
+        mov(this->e, this->c);
+        break;
+    case 0x5A:
+        mov(this->e, this->d);
+        break;
+    case 0x5B:
+        mov(this->e, this->e);
+        break;
+    case 0x5C:
+        mov(this->e, this->h);
+        break;
+    case 0x5D:
+        mov(this->e, this->l);
+        break;
+    case 0x5E:
+        mov_rm(this->e);
+        break;
+    case 0x5F:
+        mov(this->e, this->a);
+        break;
+    //0x60 -> 0x6F
+    case 0x60:
+        mov(this->h, this->b);
+        break;
+    case 0x61:
+        mov(this->h, this->c);
+        break;
+    case 0x62:
+        mov(this->h, this->d);
+        break;
+    case 0x63:
+        mov(this->h, this->e);
+        break;
+    case 0x64:
+        mov(this->h, this->h);
+        break;
+    case 0x65:
+        mov(this->h, this->l);
+        break;
+    case 0x66:
+        mov_rm(this->h);
+        break;
+    case 0x67:
+        mov(this->h, this->a);
+        break;
+    case 0x68:
+        mov(this->l, this->b);
+        break;
+    case 0x69:
+        mov(this->l, this->c);
+        break;
+    case 0x6A:
+        mov(this->l, this->d);
+        break;
+    case 0x6B:
+        mov(this->l, this->e);
+        break;
+    case 0x6C:
+        mov(this->l, this->h);
+        break;
+    case 0x6D:
+        mov(this->l, this->l);
+        break;
+    case 0x6E:
+        mov_rm(this->l);
+        break;
+    case 0x6F:
+        mov(this->l, this->a);
+        break;
+    case 0x70:
+        mov_mr(this->b);
+        break;
+    case 0x71:
+        mov_mr(this->c);
+        break;
+    case 0x72:
+        mov_mr(this->d);
+        break;
+    case 0x73:
+        mov_mr(this->e);
+        break;
+    case 0x74:
+        mov_mr(this->h);
+        break;
+    case 0x75:
+        mov_mr(this->l);
+        break;
+    case 0x76:
+        halt();
+        break;
+    case 0x77:
+        mov_mr(this->a);
+        break;
+    case 0x78:
+        mov(this->a, this->b);
+        break;
+    case 0x79:
+        mov(this->a, this->c);
+        break;
+    case 0x7A:
+        mov(this->a, this->d);
+        break;
+    case 0x7B:
+        mov(this->a, this->e);
+        break;
+    case 0x7C:
+        mov(this->a, this->h);
+        break;
+    case 0x7D:
+        mov(this->a, this->l);
+        break;
+    case 0x7E:
+        mov_rm(this->a);
+        break;
+    case 0x7F:
+        mov(this->a, this->a);
+        break;
+    // 0x80 -> 0x8F
+
     default:
         printf("OPCODE not implemented %d", instruction);
         break;
@@ -858,5 +1054,47 @@ void cpu::pop(u8 &upper_reg, u8 &lower_reg)
     // 10 cycles
 }
 
+// copy reg b onto reg a
+void cpu::mov(u8 &reg_a, u8 &reg_b)
+{
+    reg_a = reg_b;
+    this->cycles +=1;
+}
 
+// copy data from memory onto reg 
+void cpu::mov_rm(u8 &reg)
+{
+    u16 address = cpu::get_hl();
+    u8 data = ram->read(address);
+    this->cycles += 3;
+    reg = data;
+}
+// copy data from reg onto memory
+void cpu::mov_mr(u8 &reg)
+{
+    u16 address = cpu::get_hl();
+    ram->write(address, reg);
+    this->cycles += 3;
+}
+
+/// halts the cpu execution 
+void cpu::halt()
+{
+    this->is_halted = true;
+    this->cycles += 3;
+}
+
+void cpu::add(u8 &reg)
+{
+    u8 old_a = get_a();
+    u16 result = static_cast<u16>(this->a) + static_cast<u16>(reg);
+    u8 a = static_cast<u8>(result);
+    set_a(a);
+    
+    set_z_flag(a);
+    set_s_flag(this->a);
+    set_p_flag(a);
+    set_c_flag(result > 0xFF);
+    set_a_flag_add_type(old_a, a, false);
+}
 
