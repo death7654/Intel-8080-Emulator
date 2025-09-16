@@ -143,6 +143,10 @@ public:
     void halt();
 
     void add(u8 &reg);
+    void add_m();
+
+    void adc(u8 &reg);
+    void adc_m();
 
     void push(u8 &upper_reg, u8 &lower_reg);
     void pop(u8 &upper_reg, u8 &lower_reg);

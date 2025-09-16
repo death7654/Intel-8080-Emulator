@@ -22,7 +22,7 @@
     void cpu::set_##high_reg##low_reg(u16 data) \
     {                                           \
         this->a = data >> 8;                    \
-        this->b = (u8)data;                     \
+        this->b = static_cast<u8>(data);        \
     }
 
 get_register(a);
@@ -114,7 +114,7 @@ void cpu::execute(u8 instruction)
         inr(this->c);
         break;
     case 0x0D:
-        dcr(this->b);
+        dcr(this->c);
         break;
     case 0x0E:
         mvi(this->c);
@@ -465,6 +465,55 @@ void cpu::execute(u8 instruction)
         mov(this->a, this->a);
         break;
     // 0x80 -> 0x8F
+    case 0x80:
+        add(this->b);
+        break;
+    case 0x81:
+        add(this->c);
+        break;
+    case 0x82:
+        add(this->d);
+        break;
+    case 0x83:
+        add(this->e);
+        break;
+    case 0x84:
+        add(this->h);
+        break;
+    case 0x85:
+        add(this->l);
+        break;
+    case 0x86:
+        add_m();
+        break;
+    case 0x87:
+        add(this->a);
+        break;
+    case 0x88:
+        adc(this->b);
+        break;
+    case 0x89:
+        adc(this->c);
+        break;
+    case 0x8A:
+        adc(this->d);
+        break;
+    case 0x8B:
+        adc(this->e);
+        break;
+    case 0x8C:
+        adc(this->h);
+        break;
+    case 0x8D:
+        adc(this->l);
+        break;
+    case 0x8E:
+        adc_m();
+        break;
+    case 0x8F:
+        adc(this->a);
+        break;
+    // 0x90 -> 0x9F
 
     default:
         printf("OPCODE not implemented %d", instruction);
@@ -1096,5 +1145,75 @@ void cpu::add(u8 &reg)
     set_p_flag(a);
     set_c_flag(result > 0xFF);
     set_a_flag_add_type(old_a, a, false);
+    // 4 cycles
+}
+
+void cpu::add_m()
+{
+    u16 address = get_hl();
+    u8 data = ram->read(address);
+    this->cycles += 3;
+
+    u8 old_a = get_a();
+    u16 result = static_cast<u16>(this->a) + static_cast<u16>(data);
+    u8 a = static_cast<u8>(result);
+    set_a(a);
+    
+    set_z_flag(a);
+    set_s_flag(this->a);
+    set_p_flag(a);
+    set_c_flag(result > 0xFF);
+    set_a_flag_add_type(old_a, a, false);
+    // 4 cycles
+}
+
+void cpu::adc(u8 &reg)
+{
+    u8 old_a = get_a();
+    u16 result = static_cast<u16>(this->a) + static_cast<u16>(reg);
+
+    u8 f = get_f();
+    u8 carry = f & C_FLAG;
+    if(carry != 0)
+    {
+        result++;
+    }
+
+    u8 a = static_cast<u8>(result);
+    set_a(a);
+    
+    set_z_flag(a);
+    set_s_flag(this->a);
+    set_p_flag(a);
+    set_c_flag(result > 0xFF);
+    set_a_flag_add_type(old_a, a, false);
+}
+
+void cpu::adc_m()
+{
+    u16 address = get_hl();
+    u8 data = ram->read(address);
+    this->cycles += 3;
+
+    u8 old_a = get_a();
+    u16 result = static_cast<u16>(this->a) + static_cast<u16>(data);
+
+    u8 f = get_f();
+    u8 carry = f & C_FLAG;
+    if(carry != 0)
+    {
+        result++;
+    }
+
+    u8 a = static_cast<u8>(result);
+    set_a(a);
+    
+    set_z_flag(a);
+    set_s_flag(this->a);
+    set_p_flag(a);
+    set_c_flag(result > 0xFF);
+    set_a_flag_add_type(old_a, a, false);
+    // 4 cycles
+
 }
 
