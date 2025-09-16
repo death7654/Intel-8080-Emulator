@@ -93,6 +93,8 @@ public:
     void set_p_flag(u8 &reg);
     void set_c_flag(bool condition);
 
+    // get flag
+
     // opcodes
     void nop();
 
@@ -147,6 +149,12 @@ public:
 
     void adc(u8 &reg);
     void adc_m();
+
+    void sub(u8 &reg);
+    void sub_m();
+
+    void sbb(u8 &reg);
+    void sbb_m();
 
     void push(u8 &upper_reg, u8 &lower_reg);
     void pop(u8 &upper_reg, u8 &lower_reg);
