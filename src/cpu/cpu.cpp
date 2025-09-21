@@ -514,6 +514,56 @@ void cpu::execute(u8 instruction)
         adc(this->a);
         break;
     // 0x90 -> 0x9F
+    case 0x90:
+        sub(this->b);
+        break;
+    case 0x91:
+        sub(this->c);
+        break;
+    case 0x92:
+        sub(this->d);
+        break;
+    case 0x93:
+        sub(this->e);
+        break;
+    case 0x94:
+        sub(this->h);
+        break;
+    case 0x95:
+        sub(this->l);
+        break;
+    case 0x96:
+        sub_m();
+        break;
+    case 0x97:
+        sub(this->a);
+        break;
+    case 0x98:
+        sbb(this->b);
+        break;
+    case 0x99:
+        sbb(this->c);
+        break;
+    case 0x9A:
+        sbb(this->d);
+        break;
+    case 0x9B:
+        sbb(this->e);
+        break;
+    case 0x9C:
+        sbb(this->h);
+        break;
+    case 0x9D:
+        sbb(this->l);
+        break;
+    case 0x9E:
+        sbb_m();
+        break;
+    case 0x9F:
+        sbb(this->a);
+        break;
+    // 0xA0 -> 0xAF    
+
 
     default:
         printf("OPCODE not implemented %d", instruction);
@@ -1079,30 +1129,6 @@ void cpu::lda()
     // 13 cycles
 }
 
-
-void cpu::push(u8 &upper_reg, u8 &lower_reg)
-{
-    this->sp--;
-    ram->write(this->sp, upper_reg);
-    this->sp--;
-    ram->write(this->sp, lower_reg);
-    this->cycles += 7;
-
-    // 11 cycles
-}
-
-// retrieve a 16 bit value from stack
-void cpu::pop(u8 &upper_reg, u8 &lower_reg)
-{
-    lower_reg = ram->read(this->sp);
-    this->sp++;
-    upper_reg = ram->read(this->sp);
-    this->sp++;
-
-    this->cycles += 6;
-    // 10 cycles
-}
-
 // copy reg b onto reg a
 void cpu::mov(u8 &reg_a, u8 &reg_b)
 {
@@ -1133,6 +1159,7 @@ void cpu::halt()
     this->cycles += 3;
 }
 
+// add to reg a with the specified reg
 void cpu::add(u8 &reg)
 {
     u8 old_a = get_a();
@@ -1141,13 +1168,14 @@ void cpu::add(u8 &reg)
     set_a(a);
     
     set_z_flag(a);
-    set_s_flag(this->a);
+    set_s_flag(a);
     set_p_flag(a);
     set_c_flag(result > 0xFF);
     set_a_flag_add_type(old_a, a, false);
     // 4 cycles
 }
 
+// add memory data to reg a
 void cpu::add_m()
 {
     u16 address = get_hl();
@@ -1167,6 +1195,7 @@ void cpu::add_m()
     // 4 cycles
 }
 
+// add with carry
 void cpu::adc(u8 &reg)
 {
     u8 old_a = get_a();
@@ -1189,6 +1218,7 @@ void cpu::adc(u8 &reg)
     set_a_flag_add_type(old_a, a, false);
 }
 
+// add specified memory with carry
 void cpu::adc_m()
 {
     u16 address = get_hl();
@@ -1217,3 +1247,116 @@ void cpu::adc_m()
 
 }
 
+// sub a from the specified memory
+void cpu::sub(u8 &reg)
+{
+    u8 a = get_a();
+    u8 result = a - reg;
+    set_a(result);
+
+    set_z_flag(result);
+    set_s_flag(result);
+    set_p_flag(result);
+    set_c_flag(a < reg);
+    set_a_flag_sub_type(a, result, false);
+
+    // 4 cycles
+
+}
+
+// subtract memory data from reg A
+void cpu::sub_m()
+{
+    u16 address = get_hl();
+    u8 data = ram->read(address);
+    this->cycles += 3;
+
+    u8 a = get_a();
+    u8 result = a - data;
+    set_a(result);
+
+    set_z_flag(result);
+    set_s_flag(result);
+    set_p_flag(result);
+    set_c_flag(a < data);
+    set_a_flag_sub_type(a, result, false);
+
+    // 7 cycles
+}
+
+// subtract memory data from reg a with borrow
+void cpu::sbb(u8 &reg)
+{
+    u8 a = get_a();
+
+    // borrow in this case is just the carry flag
+    bool borrow = get_f() & 0b00000001 != 0;
+    u8 result = a - reg - (borrow ? 1 : 0);
+    
+
+    set_a(result);
+
+    set_z_flag(result);
+    set_s_flag(result);
+    set_p_flag(result);
+    set_c_flag((a < reg) || (a - reg < (borrow ? 1 : 0)));
+    set_a_flag_sub_type(a, result, false);
+
+    // 4 cycles
+
+}
+
+void cpu::sbb_m()
+{
+    u16 address = get_hl();
+    u8 data = ram->read(address);
+    this->cycles += 3;
+
+    u8 a = get_a();
+
+    // borrow in this case is just the carry flag
+    bool borrow = get_f() & 0b00000001 != 0;
+    u8 result = a - data - (borrow ? 1 : 0);
+    
+
+    set_a(result);
+
+    set_z_flag(result);
+    set_s_flag(result);
+    set_p_flag(result);
+    set_c_flag((a < data) || (a - data < (borrow ? 1 : 0)));
+    set_a_flag_sub_type(a, result, false);
+
+    // 7 cycles
+
+}
+
+
+
+
+
+
+
+// push reg pair onto stack
+void cpu::push(u8 &upper_reg, u8 &lower_reg)
+{
+    this->sp--;
+    ram->write(this->sp, upper_reg);
+    this->sp--;
+    ram->write(this->sp, lower_reg);
+    this->cycles += 7;
+
+    // 11 cycles
+}
+
+// retrieve a 16 bit value from stack
+void cpu::pop(u8 &upper_reg, u8 &lower_reg)
+{
+    lower_reg = ram->read(this->sp);
+    this->sp++;
+    upper_reg = ram->read(this->sp);
+    this->sp++;
+
+    this->cycles += 6;
+    // 10 cycles
+}

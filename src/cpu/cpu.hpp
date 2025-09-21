@@ -156,6 +156,18 @@ public:
     void sbb(u8 &reg);
     void sbb_m();
 
+    void ana(u8 &reg);
+    void ana_m();
+
+    void xra(u8 &reg);
+    void xra_m();
+
+    void ora(u8 &reg);
+    void ora_m();
+
+    void cmp(u8 &reg);
+    void cmp_m();
+
     void push(u8 &upper_reg, u8 &lower_reg);
     void pop(u8 &upper_reg, u8 &lower_reg);
     
