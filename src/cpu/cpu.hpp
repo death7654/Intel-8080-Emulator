@@ -90,6 +90,7 @@ public:
     void set_z_flag(u8 &reg);
     void set_a_flag_add_type(u8 val1, u8 val2, bool is_increment);
     void set_a_flag_sub_type(u8 val1, u8 val2, bool is_decrement);
+    void set_a_flag_boolean(bool condition);
     void set_p_flag(u8 &reg);
     void set_c_flag(bool condition);
 

@@ -562,7 +562,105 @@ void cpu::execute(u8 instruction)
     case 0x9F:
         sbb(this->a);
         break;
-    // 0xA0 -> 0xAF    
+    // 0xA0 -> 0xAF
+    case 0xA0:
+        ana(this->b);
+        break;
+    case 0xA1:
+        ana(this->c);
+        break;
+    case 0xA2:
+        ana(this->d);
+        break;
+    case 0xA3:
+        ana(this->e);
+        break; 
+    case 0xA4:
+        ana(this->h);
+        break; 
+    case 0xA5:
+        ana(this->l);
+        break;  
+    case 0xA6:
+        ana_m();
+        break;
+    case 0xA7:
+        ana(this->a);
+        break;
+    case 0xA8:
+        xra(this->b);
+        break;
+    case 0xA9:
+        xra(this->c);
+        break;
+    case 0xAA:
+        xra(this->d);
+        break;
+    case 0xAB:
+        xra(this->e);
+        break;
+    case 0xAC:
+        xra(this->h);
+        break;
+    case 0xAD:
+        xra(this->l);
+        break;
+    case 0xAE:
+        xra_m();
+        break;
+    case 0xAF:
+        xra(this->a);
+        break;
+    // 0xB0 -> 0xBF
+    case 0xB0:
+        ora(this->b);
+        break;
+    case 0xB1:
+        ora(this->c);
+        break;
+    case 0xB2:
+        ora(this->d);
+        break;
+    case 0xB3:
+        ora(this->e);
+        break;
+    case 0xB4:
+        ora(this->h);
+        break;
+    case 0xB5:
+        ora(this->l);
+        break;
+    case 0xB6:
+        ora_m();
+        break;
+    case 0xB7:
+        ora(this->a);
+        break;
+    case 0xB8:
+        cmp(this->b);
+        break;
+    case 0xB9:
+        cmp(this->c);
+        break;
+    case 0xBA:
+        cmp(this->d);
+        break;
+    case 0xBB:
+        cmp(this->e);
+        break;
+    case 0xBC:
+        cmp(this->h);
+        break;
+    case 0xBD:
+        cmp(this->l);
+        break;
+    case 0xBE:
+        cmp_m();
+        break;
+    case 0xBF:
+        cmp(this->a);
+        break;
+    // 0xC0 - 0xCF
 
 
     default:
@@ -648,6 +746,17 @@ void cpu::set_a_flag_sub_type(u8 val1, u8 val2, bool is_decrement)
     }
     else
     {
+        f_reg &= ~A_FLAG;
+    }
+    set_f(f_reg);
+}
+
+void cpu::set_a_flag_boolean(bool condition)
+{
+    u8 f_reg = get_f();
+    if (condition) {
+        f_reg |= A_FLAG;
+    } else {
         f_reg &= ~A_FLAG;
     }
     set_f(f_reg);
@@ -1330,6 +1439,144 @@ void cpu::sbb_m()
     // 7 cycles
 
 }
+
+// bitwise and reg A and the specified register
+void cpu::ana(u8 &reg)
+{
+    u8 a = get_a();
+    u8 result = a & reg;
+    set_a(result);
+
+    set_z_flag(result);
+    set_s_flag(result);
+    set_p_flag(result);
+    set_c_flag(false);
+    set_a_flag_boolean(((a | reg) & 0x08) !=0);
+    // 4 cycles
+}
+
+void cpu::ana_m()
+{
+    u8 a = get_a();
+
+    u16 address = get_hl();
+    u8 data = ram->read(address);
+    this->cycles+=3;
+
+    u8 result = a & data;
+    set_a(result);
+
+    set_z_flag(result);
+    set_s_flag(result);
+    set_p_flag(result);
+    set_c_flag(false);
+    set_a_flag_boolean(((a | data) & 0x08) !=0);
+    
+    // 7 cycles
+}
+
+// performs XOR on reg A and the specified register
+void cpu::xra(u8 &reg)
+{
+    u8 a = get_a();
+    u8 result = a ^ reg;
+    set_a(result);
+
+    set_z_flag(result);
+    set_s_flag(result);
+    set_p_flag(result);
+    set_c_flag(false);
+    set_a_flag_boolean(false);
+    // 4 cycles
+}
+
+void cpu::xra_m()
+{
+    u8 a = get_a();
+
+    u16 address = get_hl();
+    u8 data = ram->read(address);
+    this->cycles += 3;
+
+    u8 result = a ^ data;
+    set_a(result);
+
+    set_z_flag(result);
+    set_s_flag(result);
+    set_p_flag(result);
+    set_c_flag(false);
+    set_a_flag_boolean(false);
+    // 4 cycles
+}
+
+// peforms an or operation on reg A and the specified register
+void cpu::ora(u8 &reg)
+{
+    u8 a = get_a();
+    u8 result = a | reg;
+    set_a(result);
+
+    set_z_flag(result);
+    set_s_flag(result);
+    set_p_flag(result);
+    set_c_flag(false);
+    set_a_flag_boolean(false);
+    // 4 cycles
+}
+
+void cpu::ora_m()
+{
+    u8 a = get_a();
+
+    u16 address = get_hl();
+    u8 data = ram->read(address);
+    this->cycles += 3;
+
+    u8 result = a | data;
+    set_a(result);
+
+    set_z_flag(result);
+    set_s_flag(result);
+    set_p_flag(result);
+    set_c_flag(false);
+    set_a_flag_boolean(false);
+    // 4 cycles
+}
+
+// compare the value of reg a and the specified register
+void cpu::cmp(u8 &reg)
+{
+    u8 a = get_a();
+    u8 result = a - reg;
+
+    set_z_flag(result);
+    set_s_flag(result);
+    set_p_flag(result);
+    set_c_flag(a < reg); 
+    set_a_flag_sub_type(a, reg, false);
+
+    // 4 cycles
+}
+
+void cpu::cmp_m()
+{
+    u8 a = get_a();
+
+    u16 address = get_hl();
+    u8 data = ram->read(address);
+
+    u8 result = a - data;
+
+    set_z_flag(result);
+    set_s_flag(result);
+    set_p_flag(result);
+    set_c_flag(a < data); 
+    set_a_flag_sub_type(a, data, false);
+
+    // 4 cycles
+}
+
+
 
 
 
