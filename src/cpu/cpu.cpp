@@ -1576,7 +1576,86 @@ void cpu::cmp_m()
     // 4 cycles
 }
 
+// if the zero flag is set, two stack values are popped and pushed onto pc
+void cpu::rnz()
+{
+    u8 f = get_f();
+    bool zero = (f & 0x40) != 0;
 
+    if(!zero)
+    {
+        u16 pc_value = pop_get_value();
+        this->pc = pc_value;
+    }
+    this->cycles+=1;
+    // 11 cycles if zero is true, 5 cycles if zero is false
+}
+
+// if the zero flag is true, then the address found in the following two bytes are pushed onto the pc
+void cpu::jnz()
+{
+    u8 f = get_f();
+    bool zero = (f & 0x40) != 0;
+
+    u8 lower = fetch();
+    this->cycles += 3;
+    u8 upper = fetch();
+    this->cycles+=3;
+
+    if(!zero)
+    {
+        u16 address = ((static_cast<u16>(upper)<<8)) | lower;
+        this->pc = address;
+    }
+    // 10 cycles
+}
+
+// unconditional jump to a new program address
+void cpu::jmp()
+{
+    u8 f = get_f();
+    bool zero = (f & 0x40) != 0;
+
+    u8 lower = fetch();
+    this->cycles += 3;
+    u8 upper = fetch();
+    this->cycles+=3;
+
+    u16 address = ((static_cast<u16>(upper)<<8)) | lower;
+    this->pc = address;
+
+    // 10 cycles
+}
+
+// pushes pc to stack and sets it to the next 2 bytes if the zero flag is true
+void cpu::cnz()
+{
+    u8 f = get_f();
+    bool zero = (f & 0x40) != 0;
+
+    u8 lower = fetch();
+    this->cycles += 3;
+    u8 upper = fetch();
+    this->cycles+=3;
+
+    if(!zero)
+    {
+        u16 pc = this->pc;
+        u8 upper_pc = pc >> 8;
+        u8 lower_pc = pc;
+
+        push_value(upper_pc, lower_pc);
+        u16 new_pc = ((static_cast<u16>(upper))<<8) | lower;
+        this->pc = new_pc;
+    }
+    else
+    {
+        this->cycles+=1;
+    }
+
+    // 17 cycles if flag is zero, 11 cycles is not zero
+
+}
 
 
 
@@ -1596,6 +1675,16 @@ void cpu::push(u8 &upper_reg, u8 &lower_reg)
     // 11 cycles
 }
 
+// push value pair onto the stack
+void cpu::push_value(u8 upper, u8 lower)
+{
+    this->sp--;
+    ram->write(this->sp, upper);
+    this->sp--;
+    ram->write(this->sp, lower);
+    this->cycles += 7;
+}
+
 // retrieve a 16 bit value from stack
 void cpu::pop(u8 &upper_reg, u8 &lower_reg)
 {
@@ -1606,4 +1695,17 @@ void cpu::pop(u8 &upper_reg, u8 &lower_reg)
 
     this->cycles += 6;
     // 10 cycles
+}
+
+// get the 16 bit value of the stack
+u16 cpu::pop_get_value()
+{
+    u8 lower = ram->read(this->sp);
+    this->sp++;
+    u8 upper  = ram->read(this->sp);
+    this->sp++;
+
+    this->cycles += 6;
+    u16 value = (static_cast<u16>(upper) << 8) | lower;
+    return value;
 }

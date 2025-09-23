@@ -169,8 +169,15 @@ public:
     void cmp(u8 &reg);
     void cmp_m();
 
+    void rnz();
+    void jnz();
+    void jmp();
+    void cnz();
+
     void push(u8 &upper_reg, u8 &lower_reg);
+    void push_value(u8 upper, u8 lower);
     void pop(u8 &upper_reg, u8 &lower_reg);
+    u16 pop_get_value();
     
 
 
