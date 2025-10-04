@@ -29,6 +29,7 @@ private:
     u8 output;
 
     bool is_halted = false;
+    bool interrupts = false;
 
     u64 cycles = 0;
     memory* ram;
@@ -185,6 +186,41 @@ public:
 
     void aci();
 
+    void rnc();
+    void jnc();
+    void out();
+    void cnc();
+    void sui();
+    void rc();
+    void jc();
+    void in();
+    void cc();
+    void sbi();
+
+    void rpo();
+    void jpo();
+    void xthl();
+    void cpo();
+    void ani();
+    void rpe();
+    void pchl();
+    void jpe();
+    void xchg();
+    void cpe();
+    void xri();
+
+    void rp();
+    void jp();
+    void di();
+    void cp();
+    void ori();
+    void rm();
+    void sphl();
+    void jm();
+    void ei();
+    void cm();
+    void cpi();
+    
     void push(u8 &upper_reg, u8 &lower_reg);
     void push_value(u8 upper, u8 lower);
     void pop(u8 &upper_reg, u8 &lower_reg);

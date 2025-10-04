@@ -73,7 +73,7 @@ void cpu::execute(u8 instruction)
     this->cycles += 4; // each instruction fetch uses 4 cycles
     switch (instruction)
     {
-    // 0x00 -> 0x0F 
+    // 0x00 -> 0x0F
     case 0x00:
         nop();
         break;
@@ -137,7 +137,7 @@ void cpu::execute(u8 instruction)
         break;
     case 0x14:
         inr(this->d);
-        break; 
+        break;
     case 0x15:
         dcr(this->d);
         break;
@@ -199,7 +199,7 @@ void cpu::execute(u8 instruction)
     case 0x28:
         nop();
         break;
-    case 0x29:  
+    case 0x29:
         dad(this->h, this->l);
         break;
     case 0x2A:
@@ -209,7 +209,7 @@ void cpu::execute(u8 instruction)
         dcx(this->h, this->l);
         break;
     case 0x2C:
-        inr(this->l);   
+        inr(this->l);
         break;
     case 0x2D:
         dcr(this->l);
@@ -220,7 +220,7 @@ void cpu::execute(u8 instruction)
     case 0x2F:
         cma();
         break;
-    //0x30 - 0x3F
+    // 0x30 - 0x3F
     case 0x30:
         nop();
         break;
@@ -269,7 +269,7 @@ void cpu::execute(u8 instruction)
     case 0x3F:
         cmc();
         break;
-    //0x40 -> 0x4F
+    // 0x40 -> 0x4F
     case 0x40:
         mov(this->b, this->b);
         break;
@@ -318,7 +318,7 @@ void cpu::execute(u8 instruction)
     case 0x4F:
         mov(this->c, this->a);
         break;
-    //0x50 -> 0x5F
+    // 0x50 -> 0x5F
     case 0x50:
         mov(this->d, this->b);
         break;
@@ -367,7 +367,7 @@ void cpu::execute(u8 instruction)
     case 0x5F:
         mov(this->e, this->a);
         break;
-    //0x60 -> 0x6F
+    // 0x60 -> 0x6F
     case 0x60:
         mov(this->h, this->b);
         break;
@@ -574,13 +574,13 @@ void cpu::execute(u8 instruction)
         break;
     case 0xA3:
         ana(this->e);
-        break; 
+        break;
     case 0xA4:
         ana(this->h);
-        break; 
+        break;
     case 0xA5:
         ana(this->l);
-        break;  
+        break;
     case 0xA6:
         ana_m();
         break;
@@ -709,10 +709,150 @@ void cpu::execute(u8 instruction)
     case 0xCF:
         rst(1);
         break;
-    
+
     // 0xD0 -> 0xDF
+    case 0xD0:
+        rnc();
+        break;
+    case 0xD1:
+        pop(this->d, this->e);
+        break;
+    case 0xD2:
+        jnc();
+        break;
+    case 0xD3:
+        out();
+        break;
+    case 0xD4:
+        cnc();
+        break;
+    case 0xD5:
+        push(this->d, this->e);
+        break;
+    case 0xD6:
+        sui();
+        break;
+    case 0xD7:
+        rst(2);
+        break;
+    case 0xD8:
+        rc();
+        break;
+    case 0xD9:
+        break;
+    case 0xDA:
+        jc();
+        break;
+    case 0xDB:
+        in();
+        break;
+    case 0xDC:
+        cc();
+        break;
+    case 0xDD:
+        break;
+    case 0xDE:
+        sbi();
+        break;
+    case 0xDF:
+        rst(3);
+        break;
+        // 0xE0 ->0xEF
+    case 0xE0:
+        rpo();
+        break;
+    case 0xE1:
+        pop(this->h, this->l);
+        break;
+    case 0xE2:
+        jpo();
+        break;
+    case 0xE3:
+        xthl();
+        break;
+    case 0xE4:
+        cpo();
+        break;
+    case 0xE5:
+        push(this->h, this->l);
+        break;
+    case 0xE6:
+        ani();
+        break;
+    case 0xE7:
+        rst(4);
+        break;
+    case 0xE8:
+        rpe();
+        break;
+    case 0xE9:
+        pchl();
+        break;
+    case 0xEA:
+        jpe();
+        break;
+    case 0xEB:
+        xchg();
+        break;
+    case 0xEC:
+        cpe();
+        break;
+    case 0xED:
+        break;
+    case 0xEE:
+        xri();
+        break;
+    case 0xEF:
+        rst(5);
+        break;
 
-
+    case 0xF0:
+        rp();
+        break;
+    case 0xF1:
+        rp();
+        break;
+    case 0xF2:
+        jp();
+        break;
+    case 0xF3:
+        di();
+        break;
+    case 0xF4:
+        cp();
+        break;
+    case 0xF5:
+        push(this->a, this->f);
+        break;
+    case 0xF6:
+        ori();
+        break;
+    case 0xF7:
+        rst(6);
+        break;
+    case 0xF8:
+        rm();
+        break;
+    case 0xF9:
+        sphl();
+        break;
+    case 0xFA:
+        jm();
+        break;
+    case 0xFB:
+        ei();
+        break;
+    case 0xFC:
+        cm();
+        break;
+    case 0xFD:
+        break;
+    case 0xFE:
+        cpi();
+        break;
+    case 0xFF:
+        rst(7);
+        break;
     default:
         printf("OPCODE not implemented %d", instruction);
         break;
@@ -804,9 +944,12 @@ void cpu::set_a_flag_sub_type(u8 val1, u8 val2, bool is_decrement)
 void cpu::set_a_flag_boolean(bool condition)
 {
     u8 f_reg = get_f();
-    if (condition) {
+    if (condition)
+    {
         f_reg |= A_FLAG;
-    } else {
+    }
+    else
+    {
         f_reg &= ~A_FLAG;
     }
     set_f(f_reg);
@@ -840,9 +983,12 @@ void cpu::set_p_flag(u8 &reg)
 void cpu::set_c_flag(bool condition)
 {
     u8 f_reg = get_f();
-    if (condition) {
+    if (condition)
+    {
         f_reg |= C_FLAG;
-    } else {
+    }
+    else
+    {
         f_reg &= ~C_FLAG;
     }
     set_f(f_reg);
@@ -941,9 +1087,7 @@ void cpu::inr_m()
     set_a_flag_add_type(old_data, new_data, true);
     set_p_flag(new_data);
 
-
-
-    //10 cycles
+    // 10 cycles
 }
 
 // decrement an 8 bit register
@@ -978,7 +1122,6 @@ void cpu::dcr_m()
     set_p_flag(new_data);
 
     // 10 cycles
-
 }
 
 // copy the intermediate value from memory onto a register
@@ -1019,7 +1162,6 @@ void cpu::dad(u8 &upper_a_reg, u8 &lower_a_reg)
     u16 b = get_hl();
     u32 result = a + b; // 32 bit to check for overflow
 
-
     set_c_flag(result > 0xFFFF);
 
     set_hl(static_cast<u16>(result));
@@ -1050,18 +1192,18 @@ void cpu::ldax(u8 &upper_reg, u8 &lower_reg)
     u8 data = ram->read(address);
     set_a(data);
 
-    this->cycles +=3;
+    this->cycles += 3;
     // 7 cycles
 }
 
-// decrement 16 bit register 
+// decrement 16 bit register
 void cpu::dcx(u8 &upper_reg, u8 &lower_reg)
 {
     u16 data = (static_cast<u16>(upper_reg << 8)) | lower_reg;
     data--;
     upper_reg = data >> 8;
     lower_reg = static_cast<u8>(data);
-    this->cycles+=2;
+    this->cycles += 2;
 
     // 6 cycles
 }
@@ -1091,10 +1233,10 @@ void cpu::ral()
 {
     u8 a = get_a();
     u8 msb = a & 0x80;
-    bool carry_flag = (get_f() & 0x01) != 0; 
+    bool carry_flag = (get_f() & 0x01) != 0;
     a = a << 1;
 
-    if(carry_flag)
+    if (carry_flag)
     {
         a |= 0x01;
     }
@@ -1113,9 +1255,12 @@ void cpu::rar()
 
     a >>= 1;
 
-    if (original_carry_flag) {
-        a |= 0x80; 
-    } else {
+    if (original_carry_flag)
+    {
+        a |= 0x80;
+    }
+    else
+    {
         a &= ~0x80;
     }
 
@@ -1140,7 +1285,7 @@ void cpu::shld()
     ram->write(address, this->l);
     this->cycles += 3;
 
-    ram->write(address+1, this->h);
+    ram->write(address + 1, this->h);
     this->cycles += 3;
 
     // 16 cycles
@@ -1149,30 +1294,29 @@ void cpu::shld()
 // converts a illegal bcd into legal bcd
 void cpu::daa()
 {
-    u8 old_a = get_a();       
-    u8 a = old_a;             
-    
+    u8 old_a = get_a();
+    u8 a = old_a;
+
     u8 current_flags = get_f();
     bool original_carry = (current_flags & 0x01) != 0;
     bool original_aux_carry = (current_flags & 0b00010010) != 0;
 
-    
     bool carry_set_by_daa_adjustment = false;
     bool aux_carry_set_by_daa_adjustment = false;
 
-    
     if ((a & 0x0F) > 0x09 || original_aux_carry)
     {
-        a += 0x06; 
-        aux_carry_set_by_daa_adjustment = true; 
+        a += 0x06;
+        aux_carry_set_by_daa_adjustment = true;
     }
 
     if ((a & 0xF0) > 0x90 || original_carry)
     {
-        u16 temp_sum = (u16)a + 0x60; 
-        a = (u8)temp_sum;            
-        if (temp_sum > 0xFF) {
-            carry_set_by_daa_adjustment = true; 
+        u16 temp_sum = (u16)a + 0x60;
+        a = (u8)temp_sum;
+        if (temp_sum > 0xFF)
+        {
+            carry_set_by_daa_adjustment = true;
         }
     }
 
@@ -1182,21 +1326,30 @@ void cpu::daa()
     set_z_flag(this->a);
     set_p_flag(this->a);
 
-    u8 final_flags = get_f(); 
+    u8 final_flags = get_f();
 
-    if (aux_carry_set_by_daa_adjustment) {
-        final_flags |= A_FLAG; 
-    } else {
-        final_flags &= ~A_FLAG; 
+    if (aux_carry_set_by_daa_adjustment)
+    {
+        final_flags |= A_FLAG;
+    }
+    else
+    {
+        final_flags &= ~A_FLAG;
     }
 
-    if (carry_set_by_daa_adjustment) {
-        final_flags |= C_FLAG; 
-    } else {
-        if (original_carry) { 
+    if (carry_set_by_daa_adjustment)
+    {
+        final_flags |= C_FLAG;
+    }
+    else
+    {
+        if (original_carry)
+        {
             final_flags |= C_FLAG;
-        } else {
-            final_flags &= ~C_FLAG; 
+        }
+        else
+        {
+            final_flags &= ~C_FLAG;
         }
     }
     set_f(final_flags);
@@ -1211,18 +1364,17 @@ void cpu::lhld()
     this->cycles += 3;
 
     u8 upper = fetch();
-    this->cycles +=3;
+    this->cycles += 3;
 
     u16 address = (static_cast<u16>(upper) << 8) | lower;
 
     set_l(ram->read(address));
-    this->cycles+=3;
+    this->cycles += 3;
 
     set_h(ram->read(address + 1));
     this->cycles += 3;
 
     // 16 cycles
-
 }
 // push value from a 16 bit register onto stack
 
@@ -1279,7 +1431,7 @@ void cpu::lda()
     this->cycles += 3;
 
     u16 address = (static_cast<u16>(address_high << 8)) | address_low;
-    
+
     u8 data = ram->read(address);
     this->cycles += 3;
 
@@ -1292,10 +1444,10 @@ void cpu::lda()
 void cpu::mov(u8 &reg_a, u8 &reg_b)
 {
     reg_a = reg_b;
-    this->cycles +=1;
+    this->cycles += 1;
 }
 
-// copy data from memory onto reg 
+// copy data from memory onto reg
 void cpu::mov_rm(u8 &reg)
 {
     u16 address = cpu::get_hl();
@@ -1311,7 +1463,7 @@ void cpu::mov_mr(u8 &reg)
     this->cycles += 3;
 }
 
-/// halts the cpu execution 
+/// halts the cpu execution
 void cpu::halt()
 {
     this->is_halted = true;
@@ -1325,7 +1477,7 @@ void cpu::add(u8 &reg)
     u16 result = static_cast<u16>(this->a) + static_cast<u16>(reg);
     u8 a = static_cast<u8>(result);
     set_a(a);
-    
+
     set_z_flag(this->a);
     set_s_flag(this->a);
     set_p_flag(this->a);
@@ -1345,7 +1497,7 @@ void cpu::add_m()
     u16 result = static_cast<u16>(this->a) + static_cast<u16>(data);
     u8 a = static_cast<u8>(result);
     set_a(a);
-    
+
     set_z_flag(this->a);
     set_s_flag(this->a);
     set_p_flag(this->a);
@@ -1362,14 +1514,14 @@ void cpu::adc(u8 &reg)
 
     u8 f = get_f();
     u8 carry = f & C_FLAG;
-    if(carry != 0)
+    if (carry != 0)
     {
         result++;
     }
 
     u8 a = static_cast<u8>(result);
     set_a(a);
-    
+
     set_z_flag(this->a);
     set_s_flag(this->a);
     set_p_flag(this->a);
@@ -1389,21 +1541,20 @@ void cpu::adc_m()
 
     u8 f = get_f();
     u8 carry = f & C_FLAG;
-    if(carry != 0)
+    if (carry != 0)
     {
         result++;
     }
 
     u8 a = static_cast<u8>(result);
     set_a(a);
-    
+
     set_z_flag(this->a);
     set_s_flag(this->a);
     set_p_flag(this->a);
     set_c_flag(result > 0xFF);
     set_a_flag_add_type(old_a, a, false);
     // 4 cycles
-
 }
 
 // sub a from the specified memory
@@ -1420,7 +1571,6 @@ void cpu::sub(u8 &reg)
     set_a_flag_sub_type(a, result, false);
 
     // 4 cycles
-
 }
 
 // subtract memory data from reg A
@@ -1451,7 +1601,6 @@ void cpu::sbb(u8 &reg)
     // borrow in this case is just the carry flag
     bool borrow = get_f() & 0b00000001 != 0;
     u8 result = a - reg - (borrow ? 1 : 0);
-    
 
     set_a(result);
 
@@ -1462,7 +1611,6 @@ void cpu::sbb(u8 &reg)
     set_a_flag_sub_type(a, result, false);
 
     // 4 cycles
-
 }
 
 void cpu::sbb_m()
@@ -1476,7 +1624,6 @@ void cpu::sbb_m()
     // borrow in this case is just the carry flag
     bool borrow = get_f() & 0b00000001 != 0;
     u8 result = a - data - (borrow ? 1 : 0);
-    
 
     set_a(result);
 
@@ -1487,7 +1634,6 @@ void cpu::sbb_m()
     set_a_flag_sub_type(a, result, false);
 
     // 7 cycles
-
 }
 
 // bitwise and reg A and the specified register
@@ -1501,7 +1647,7 @@ void cpu::ana(u8 &reg)
     set_s_flag(result);
     set_p_flag(result);
     set_c_flag(false);
-    set_a_flag_boolean(((a | reg) & 0x08) !=0);
+    set_a_flag_boolean(((a | reg) & 0x08) != 0);
     // 4 cycles
 }
 
@@ -1511,7 +1657,7 @@ void cpu::ana_m()
 
     u16 address = get_hl();
     u8 data = ram->read(address);
-    this->cycles+=3;
+    this->cycles += 3;
 
     u8 result = a & data;
     set_a(result);
@@ -1520,8 +1666,8 @@ void cpu::ana_m()
     set_s_flag(result);
     set_p_flag(result);
     set_c_flag(false);
-    set_a_flag_boolean(((a | data) & 0x08) !=0);
-    
+    set_a_flag_boolean(((a | data) & 0x08) != 0);
+
     // 7 cycles
 }
 
@@ -1602,7 +1748,7 @@ void cpu::cmp(u8 &reg)
     set_z_flag(result);
     set_s_flag(result);
     set_p_flag(result);
-    set_c_flag(a < reg); 
+    set_c_flag(a < reg);
     set_a_flag_sub_type(a, reg, false);
 
     // 4 cycles
@@ -1620,7 +1766,7 @@ void cpu::cmp_m()
     set_z_flag(result);
     set_s_flag(result);
     set_p_flag(result);
-    set_c_flag(a < data); 
+    set_c_flag(a < data);
     set_a_flag_sub_type(a, data, false);
 
     // 4 cycles
@@ -1632,12 +1778,12 @@ void cpu::rnz()
     u8 f = get_f();
     bool zero = (f & 0x40) != 0;
 
-    if(!zero)
+    if (!zero)
     {
         u16 pc_value = pop_get_value();
         this->pc = pc_value;
     }
-    this->cycles+=1;
+    this->cycles += 1;
     // 11 cycles if zero is true, 5 cycles if zero is false
 }
 
@@ -1650,11 +1796,11 @@ void cpu::jnz()
     u8 lower = fetch();
     this->cycles += 3;
     u8 upper = fetch();
-    this->cycles+=3;
+    this->cycles += 3;
 
-    if(!zero)
+    if (!zero)
     {
-        u16 address = ((static_cast<u16>(upper)<<8)) | lower;
+        u16 address = ((static_cast<u16>(upper) << 8)) | lower;
         this->pc = address;
     }
     // 10 cycles
@@ -1669,9 +1815,9 @@ void cpu::jmp()
     u8 lower = fetch();
     this->cycles += 3;
     u8 upper = fetch();
-    this->cycles+=3;
+    this->cycles += 3;
 
-    u16 address = ((static_cast<u16>(upper)<<8)) | lower;
+    u16 address = ((static_cast<u16>(upper) << 8)) | lower;
     this->pc = address;
 
     // 10 cycles
@@ -1686,25 +1832,24 @@ void cpu::cnz()
     u8 lower = fetch();
     this->cycles += 3;
     u8 upper = fetch();
-    this->cycles+=3;
+    this->cycles += 3;
 
-    if(!zero)
+    if (!zero)
     {
         u16 pc = this->pc;
         u8 upper_pc = pc >> 8;
         u8 lower_pc = pc;
 
         push_value(upper_pc, lower_pc);
-        u16 new_pc = ((static_cast<u16>(upper))<<8) | lower;
+        u16 new_pc = ((static_cast<u16>(upper)) << 8) | lower;
         this->pc = new_pc;
     }
     else
     {
-        this->cycles+=1;
+        this->cycles += 1;
     }
 
     // 17 cycles if flag is zero, 11 cycles is not zero
-
 }
 
 // add inteermediate
@@ -1713,7 +1858,7 @@ void cpu::adi()
     u8 a = get_a();
 
     u8 b = fetch();
-    this->cycles+=3;
+    this->cycles += 3;
 
     u8 result = a + b;
     set_a(result);
@@ -1733,12 +1878,10 @@ void cpu::rst(int n)
     push_value((pc >> 8), pc);
 
     pc = 8 * n;
-    this->pc = pc; 
-    
-    // 4 cycles
-    
-}
+    this->pc = pc;
 
+    // 4 cycles
+}
 
 // resets the pc to the top of the stack if the zero flag is set
 void cpu::rz()
@@ -1746,16 +1889,17 @@ void cpu::rz()
     u8 flags = get_f();
     bool z_set = (flags & 0b01000000) != 0;
 
-    if(z_set)
+    if (z_set)
     {
         u16 new_pc = pop_get_value();
         this->pc = new_pc;
     }
-    this->cycles+=1;
+    this->cycles += 1;
 
     // 11 cycles if true 5 if false
 }
 
+// unconditional return
 void cpu::ret()
 {
     this->pc = pop_get_value();
@@ -1763,21 +1907,19 @@ void cpu::ret()
     // 10 cycles in total, pop function adds 6, function fetch adds 4
 }
 
-
 // jump to the address found in the next 2 bytes of data if the zero flag is set
 void cpu::jz()
 {
     u8 flags = get_f();
     bool z_set = (flags & 0b01000000) != 0;
 
-   
-    u16 low_byte = fetch(); 
-    this->cycles+=3;
+    u16 low_byte = fetch();
+    this->cycles += 3;
     u16 high_byte = fetch();
-    this->cycles+=3; 
+    this->cycles += 3;
     u16 address = (high_byte << 8) | low_byte;
 
-    if(z_set)
+    if (z_set)
     {
         this->pc = address;
     }
@@ -1785,54 +1927,55 @@ void cpu::jz()
     // 10 cycles
 }
 
-
 // conditional subreturn, pushes pc onto stack, and sets new value otherwise skip
 void cpu::cz()
-{ 
+{
     u8 lower = fetch();
-    this->cycles+=3;
+    this->cycles += 3;
     u8 upper = fetch();
-    this->cycles+=3;
+    this->cycles += 3;
 
     u8 flags = get_f();
     bool z_set = (flags & 0b01000000) != 0;
 
-    if(z_set)
+    if (z_set)
     {
         u16 old_pc = this->pc;
-        push_value((old_pc>>8), old_pc);    
-        
+        push_value((old_pc >> 8), old_pc);
+
         u16 new_pc = (static_cast<u16>(upper) << 8) | lower;
         this->pc = new_pc;
     }
     else
     {
-        this->cycles+=1;
+        this->cycles += 1;
     }
 
     // 17 cycles if z flag is set, 11 if not
 }
 
+// saves the pc into the stack and jumps the next instruction
 void cpu::call()
 {
-    push_value((this->pc>>8), this->pc);
+    push_value((this->pc >> 8), this->pc);
 
     u8 lower = fetch();
-    this->cycles+=3;
+    this->cycles += 3;
     u8 upper = fetch();
-    this->cycles +=3;
+    this->cycles += 3;
 
-    u16 new_pc = (static_cast<u16>(upper)<<8) | lower;
+    u16 new_pc = (static_cast<u16>(upper) << 8) | lower;
     this->pc = new_pc;
     // 17 cycles
 }
 
+// add intermediate and carry to accumulator
 void cpu::aci()
 {
     int carry = get_f() & 0x01;
 
     u8 data = fetch();
-    this->cycles+=3;
+    this->cycles += 3;
 
     u8 a = get_a();
     u8 result = a + data + carry;
@@ -1847,15 +1990,550 @@ void cpu::aci()
     // 7 cycles
 }
 
+// if the zero flag is not set pop from the stack and set pc to new value
+void cpu::rnc()
+{
+    u8 f = get_f();
+    bool zero = (f & 0x01) != 0;
 
+    if (!zero)
+    {
+        u16 pc_value = pop_get_value();
+        this->pc = pc_value;
+    }
+    this->cycles += 1;
+    // 11 cycles if zero is true, 5 cycles if zero is false
+}
 
+// jump if zero flag is set
+void cpu::jnc()
+{
+    u8 f = get_f();
+    bool zero = (f & 0x01) != 0;
 
+    u8 lower = fetch();
+    this->cycles += 3;
+    u8 upper = fetch();
+    this->cycles += 3;
 
+    if (!zero)
+    {
+        u16 address = ((static_cast<u16>(upper) << 8)) | lower;
+        this->pc = address;
+    }
+}
 
+// output accumulator to a port address with the accumator as the data
+void cpu::out()
+{
+    u8 lower = fetch();
+    this->cycles += 3;
 
+    u8 upper = fetch();
+    this->cycles += 3;
 
+    printf("Data has been requested to be exported");
 
+    // 10 cycles
+}
 
+void cpu::cnc()
+{
+    u8 f = get_f();
+    bool carry = (f & 0x01) != 0;
+
+    u8 lower = fetch();
+    this->cycles += 3;
+    u8 upper = fetch();
+    this->cycles += 3;
+
+    if (!carry)
+    {
+        u16 pc = this->pc;
+        u8 upper_pc = pc >> 8;
+        u8 lower_pc = pc;
+
+        push_value(upper_pc, lower_pc);
+        u16 new_pc = ((static_cast<u16>(upper)) << 8) | lower;
+        this->pc = new_pc;
+    }
+    else
+    {
+        this->cycles += 1;
+    }
+
+    // 17 cycles if flag is zero, 11 cycles is not zero
+}
+// subtract intermediate value from the accumulator
+void cpu::sui()
+{
+    u8 data = fetch();
+    this->cycles += 3;
+
+    u8 a = get_a();
+    u8 result = a - data;
+    set_a(result);
+
+    set_z_flag(this->a);
+    set_s_flag(this->a);
+    set_p_flag(this->a);
+    set_c_flag(result > 0xFF);
+    set_a_flag_sub_type(a, result, false);
+
+    // 7 cycles
+}
+
+// return if z is set to true
+void cpu::rz()
+{
+    u8 flags = get_f();
+    bool z_set = (flags & 0x01) != 0;
+
+    if (z_set)
+    {
+        u16 new_pc = pop_get_value();
+        this->pc = new_pc;
+    }
+    this->cycles += 1;
+
+    // 11 cycles if true 5 if false
+}
+
+// jumps if carry flag is set
+void cpu::jc()
+{
+    u8 flags = get_f();
+    bool z_set = (flags & 0x01) != 0;
+
+    u16 low_byte = fetch();
+    this->cycles += 3;
+    u16 high_byte = fetch();
+    this->cycles += 3;
+    u16 address = (high_byte << 8) | low_byte;
+
+    if (z_set)
+    {
+        this->pc = address;
+    }
+
+    // 10 cycles
+}
+
+// reads an input
+void cpu::in()
+{
+    u8 half_address = fetch();
+    this->cycles += 3;
+
+    u16 address = (static_cast<u16>(half_address) << 8) | half_address;
+
+    printf("An input has been requested");
+}
+
+// call if the carry flag is set
+void cpu::cc()
+{
+    u8 lower = fetch();
+    this->cycles += 3;
+    u8 upper = fetch();
+    this->cycles += 3;
+
+    u8 flags = get_f();
+    bool c_set = (flags & 0x01) != 0;
+
+    if (c_set)
+    {
+        u16 old_pc = this->pc;
+        push_value((old_pc >> 8), old_pc);
+
+        u16 new_pc = (static_cast<u16>(upper) << 8) | lower;
+        this->pc = new_pc;
+    }
+    else
+    {
+        this->cycles += 1;
+    }
+
+    // 17 cycles if z flag is set, 11 if not
+}
+
+void cpu::sbi()
+{
+    int borrow = get_f() & 0x01;
+
+    u8 data = fetch();
+    this->cycles += 3;
+
+    u8 a = get_a();
+    u8 result = a - data - borrow;
+    set_a(result);
+
+    set_z_flag(this->a);
+    set_s_flag(this->a);
+    set_p_flag(this->a);
+    set_c_flag(result > 0xFF);
+    set_a_flag_add_type(a, result, false);
+
+    // 7 cycles
+}
+
+void cpu::rpo()
+{
+    u8 f = get_f();
+    bool parity = (f & 0x04) != 0;
+
+    if (!parity)
+    {
+        u16 pc_value = pop_get_value();
+        this->pc = pc_value;
+    }
+    this->cycles += 1;
+    // 11 cycles if zero is true, 5 cycles if zero is false
+}
+
+void cpu::jpo()
+{
+    u8 f = get_f();
+    bool parity = (f & 0x01) != 0;
+
+    u8 lower = fetch();
+    this->cycles += 3;
+    u8 upper = fetch();
+    this->cycles += 3;
+
+    if (!parity)
+    {
+        u16 address = ((static_cast<u16>(upper) << 8)) | lower;
+        this->pc = address;
+    }
+}
+
+void cpu::xthl()
+{
+    u16 stack = pop_get_value();
+    u8 upper = stack >> 8;
+    u8 lower = stack;
+
+    push_value(lower, upper);
+
+    this->cycles += 1;
+
+    // 18 cycles
+}
+
+void cpu::cpo()
+{
+    u8 lower = fetch();
+    this->cycles += 3;
+    u8 upper = fetch();
+    this->cycles += 3;
+
+    u8 flags = get_f();
+    bool c_set = (flags & 0x04) != 0;
+
+    if (!c_set)
+    {
+        u16 old_pc = this->pc;
+        push_value((old_pc >> 8), old_pc);
+
+        u16 new_pc = (static_cast<u16>(upper) << 8) | lower;
+        this->pc = new_pc;
+    }
+    else
+    {
+        this->cycles += 1;
+    }
+
+    // 17 cycles if z flag is set, 11 if not
+}
+
+void cpu::ani()
+{
+    u8 a = get_a();
+
+    u8 data = fetch();
+    this->cycles += 3;
+
+    u8 result = a & data;
+    set_a(result);
+
+    set_z_flag(this->a);
+    set_s_flag(this->a);
+    set_p_flag(this->a);
+    set_c_flag(result > 0xFF);
+    set_a_flag_add_type(a, result, false);
+}
+
+void cpu::rpe()
+{
+    u8 flags = get_f();
+    bool p_set = (flags & 0x04) != 0;
+
+    if (p_set)
+    {
+        u16 new_pc = pop_get_value();
+        this->pc = new_pc;
+    }
+    this->cycles += 1;
+}
+
+void cpu::pchl()
+{
+    u16 hl = get_hl();
+    this->pc = hl;
+    this->cycles += 1;
+}
+
+void cpu::jpe()
+{
+    u8 flags = get_f();
+    bool p_set = (flags & 0x04) != 0;
+
+    u16 low_byte = fetch();
+    this->cycles += 3;
+    u16 high_byte = fetch();
+    this->cycles += 3;
+    u16 address = (high_byte << 8) | low_byte;
+
+    if (p_set)
+    {
+        this->pc = address;
+    }
+}
+
+void cpu::xchg()
+{
+    u16 de = get_de();
+    set_de(get_hl());
+    set_hl(de);
+}
+void cpu::cpe()
+{
+    u8 lower = fetch();
+    this->cycles += 3;
+    u8 upper = fetch();
+    this->cycles += 3;
+
+    u8 flags = get_f();
+    bool c_set = (flags & 0x04) != 0;
+
+    if (c_set)
+    {
+        u16 old_pc = this->pc;
+        push_value((old_pc >> 8), old_pc);
+
+        u16 new_pc = (static_cast<u16>(upper) << 8) | lower;
+        this->pc = new_pc;
+    }
+    else
+    {
+        this->cycles += 1;
+    }
+
+    // 17 cycles if z flag is set, 11 if not
+}
+
+void cpu::xri()
+{
+    u8 data = fetch();
+    this->cycles += 3;
+
+    u8 a = get_a();
+    u8 result = a ^ data;
+
+    set_z_flag(this->a);
+    set_s_flag(this->a);
+    set_p_flag(this->a);
+    set_c_flag(result > 0xFF);
+    set_a_flag_add_type(a, result, false);
+}
+
+void cpu::rp()
+{
+    u8 flags = get_f();
+    bool s_set = (flags & 0x80) != 0;
+
+    if (!s_set)
+    {
+        u16 new_pc = pop_get_value();
+        this->pc = new_pc;
+    }
+    this->cycles += 1;
+}
+
+void cpu::jp()
+{
+    u8 flags = get_f();
+    bool s_set = (flags & 0x80) != 0;
+
+    u16 low_byte = fetch();
+    this->cycles += 3;
+    u16 high_byte = fetch();
+    this->cycles += 3;
+    u16 address = (high_byte << 8) | low_byte;
+
+    if (!s_set)
+    {
+        this->pc = address;
+    }
+}
+
+void cpu::di()
+{
+    this->interrupts = false;
+}
+
+void cpu::cp()
+{
+    u8 lower = fetch();
+    this->cycles += 3;
+    u8 upper = fetch();
+    this->cycles += 3;
+
+    u8 flags = get_f();
+    bool s_set = (flags & 0x80) != 0;
+
+    if (!s_set)
+    {
+        u16 old_pc = this->pc;
+        push_value((old_pc >> 8), old_pc);
+
+        u16 new_pc = (static_cast<u16>(upper) << 8) | lower;
+        this->pc = new_pc;
+    }
+    else
+    {
+        this->cycles += 1;
+    }
+
+    // 17 cycles if z flag is set, 11 if not
+}
+
+void cpu::ori()
+{
+    u8 data = fetch();
+    this->cycles += 3;
+
+    u8 a = get_a();
+    u8 result = a | data;
+    set_a(result);
+
+    set_z_flag(this->a);
+    set_s_flag(this->a);
+    set_p_flag(this->a);
+    set_c_flag(result > 0xFF);
+    set_a_flag_add_type(a, result, false);
+}
+
+void cpu::rm()
+{
+    u8 flags = get_f();
+    bool s_set = (flags & 0x80) != 0;
+
+    if (s_set)
+    {
+        u16 new_pc = pop_get_value();
+        this->pc = new_pc;
+    }
+    this->cycles += 1;
+}
+
+void cpu::sphl()
+{
+    set_sp(get_hl());
+    this->cycles += 1;
+}
+
+void cpu::jm()
+{
+    u8 flags = get_f();
+    bool s_set = (flags & 0x80) != 0;
+
+    u16 low_byte = fetch();
+    this->cycles += 3;
+    u16 high_byte = fetch();
+    this->cycles += 3;
+    u16 address = (high_byte << 8) | low_byte;
+
+    if (s_set)
+    {
+        this->pc = address;
+    }
+}
+
+void cpu::ei()
+{
+    this->interrupts = true;
+}
+
+void cpu::cm()
+{
+    u8 lower = fetch();
+    this->cycles += 3;
+    u8 upper = fetch();
+    this->cycles += 3;
+
+    u8 flags = get_f();
+    bool s_set = (flags & 0x80) != 0;
+
+    if (s_set)
+    {
+        u16 old_pc = this->pc;
+        push_value((old_pc >> 8), old_pc);
+
+        u16 new_pc = (static_cast<u16>(upper) << 8) | lower;
+        this->pc = new_pc;
+    }
+    else
+    {
+        this->cycles += 1;
+    }
+}
+
+void cpu::cpi()
+{
+    u8 data = fetch();
+    this->cycles += 3;
+
+    u8 a = get_a();
+    u16 res_16 = static_cast<u16>(a) - data;
+
+    u8 res_8 = static_cast<u8>(res_16);
+
+    u8 flags = 0;
+
+    // set z flag
+    if (res_8 == 0)
+    {
+        flags |= 0x40;
+    }
+    // set s flag
+    if (res_8 & 0x80)
+    {
+        flags |= 0x80;
+    }
+
+    // set c flag
+    if ((res_16 & 0x100) == 0x100)
+    {
+        flags |= 0x01;
+    }
+
+    // set p flag
+    u8 parity_bits = __builtin_popcount(res_8);
+    if (parity_bits % 2 == 0)
+    {
+        flags |= 0x04;
+    }
+
+    // set A flag
+    if (((a & 0x0F) - (data & 0x0F)) & 0x10)
+    {
+        flags |= 0x10;
+    }
+
+    set_f(flags);
+}
 
 // push reg pair onto stack
 void cpu::push(u8 &upper_reg, u8 &lower_reg)
@@ -1896,7 +2574,7 @@ u16 cpu::pop_get_value()
 {
     u8 lower = ram->read(this->sp);
     this->sp++;
-    u8 upper  = ram->read(this->sp);
+    u8 upper = ram->read(this->sp);
     this->sp++;
 
     this->cycles += 6;
