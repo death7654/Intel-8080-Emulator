@@ -173,6 +173,17 @@ public:
     void jnz();
     void jmp();
     void cnz();
+    void adi();
+
+    void rst(int n);
+    void rz();
+    void ret();
+
+    void jz();
+    void cz();
+    void call();
+
+    void aci();
 
     void push(u8 &upper_reg, u8 &lower_reg);
     void push_value(u8 upper, u8 lower);
