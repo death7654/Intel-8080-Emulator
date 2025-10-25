@@ -4,6 +4,8 @@
 #include <stdio.h>
 #include <cstdint>
 #include <cstdbool>
+#include <cstring>
+#include <fstream>
 
 
 // renaming data types
