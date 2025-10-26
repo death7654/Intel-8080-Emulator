@@ -2083,13 +2083,12 @@ void cpu::sui()
     // 7 cycles
 }
 
-// return if z is set to true
-void cpu::rz()
+void cpu::rc()
 {
     u8 flags = get_f();
-    bool z_set = (flags & 0x01) != 0;
+    bool carry_set = (flags & 0x01) != 0;
 
-    if (z_set)
+    if (carry_set)
     {
         u16 new_pc = pop_get_value();
         this->pc = new_pc;
@@ -2520,7 +2519,11 @@ void cpu::cpi()
     }
 
     // set p flag
-    u8 parity_bits = __builtin_popcount(res_8);
+    int parity_bits = 0;
+    while (res_8) {
+        parity_bits += res_8 & 1;
+        res_8 >>= 1;
+    }
     if (parity_bits % 2 == 0)
     {
         flags |= 0x04;

@@ -43,7 +43,6 @@ void display::present()
     SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
     SDL_RenderClear(renderer);                      
 
-    SDL_RenderCopy(renderer, texture, NULL, NULL);
-    
+    SDL_RenderTexture(renderer, texture, nullptr, nullptr);    
     SDL_RenderPresent(renderer);
 }
