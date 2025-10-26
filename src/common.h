@@ -1,4 +1,4 @@
-#ifndef commmon
+#ifndef common
 #define common
 
 #include <stdio.h>

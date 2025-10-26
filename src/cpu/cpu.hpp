@@ -1,5 +1,7 @@
+#pragma once 
+
 #include "../common.h"
-#include "memory.hpp"
+#include "../memory/memory.hpp"
 
 
 // flags: bits 5 and 3 are always 0, bit 1 is always 1
@@ -138,7 +140,6 @@ public:
     void sta();
     void stc();
     void cmc();
-    void lda();
 
     void mov(u8 &reg_a, u8 &reg_b);
     void mov_rm(u8 &reg);

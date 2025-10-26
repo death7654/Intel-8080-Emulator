@@ -1,3 +1,4 @@
+#pragma once 
 #include "../common.h"
 
 #define MEMORY_SIZE 65536
@@ -9,7 +10,7 @@ private:
 public:
     u8 read(u16 address);
     void write(u16 address, u8 data);
-    void load_rom(char *path, u16 starting_address);
+    void load_rom(const char* path, u16 starting_address);
 
     memory(/* args */);
     ~memory();

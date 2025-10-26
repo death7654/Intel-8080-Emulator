@@ -1,6 +1,12 @@
+#pragma once 
+
+#define SDL_MAIN_HANDLED
+extern "C"
+{
+    #include <SDL3/SDL.h>
+}
 #include "../common.h"
-#include "memory.hpp"
-#include <SDL.h>
+#include "../memory/memory.hpp"
 
 #define WIDTH 256
 #define HEIGHT 224
@@ -32,6 +38,29 @@ public:
     void draw_screen();
     void present();
 };
+
+void display::initialize_sdl()
+{
+    if (SDL_Init(SDL_INIT_VIDEO) < 0)
+    {
+        printf("Unable to Initialize SDL\n Error: %s", SDL_GetError());
+        return;
+    }
+
+    // create window
+    window = SDL_CreateWindow("Space Invaders Emulator",
+                          WIDTH * SCALE,
+                          HEIGHT * SCALE,
+                          0);
+
+    // create renderer
+    renderer = SDL_CreateRenderer(window, NULL);
+    texture = SDL_CreateTexture(renderer,
+                            SDL_PIXELFORMAT_ARGB8888,
+                            SDL_TEXTUREACCESS_STREAMING,
+                            WIDTH,
+                            HEIGHT);
+}
 display::display(memory* mem) : ram(mem)
 {
     memset(pixel_buffer, 0, sizeof(pixel_buffer));

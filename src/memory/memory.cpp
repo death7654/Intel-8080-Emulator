@@ -36,7 +36,7 @@ void memory::write(u16 address, u8 data)
 
 // the original space invaders game is split into 4 different files, invaders.h -> invaders.g
 
-void memory::load_rom(char *path, u16 starting_address)
+void memory::load_rom(const char* path, u16 starting_address)
 {
     // opens file with set address
     std::ifstream file(path, std::ios::binary | std::ios::ate); // binary indicates the start of the file, and ate to the end. Essentially allows for better reading
