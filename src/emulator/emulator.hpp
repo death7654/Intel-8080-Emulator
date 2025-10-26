@@ -15,6 +15,7 @@ public:
     display DISPLAY;
     emulator(/* args */);
     ~emulator();
+    void run();
 };
 
 emulator::emulator()
