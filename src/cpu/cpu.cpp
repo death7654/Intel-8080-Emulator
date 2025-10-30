@@ -1701,7 +1701,6 @@ void cpu::sbb(u8 &reg)
 {
     u8 a = get_a();
 
-    // borrow in this case is just the carry flag
     bool borrow = (get_f() & C_FLAG) != 0;
     u8 result = a - reg - (borrow ? 1 : 0);
 
@@ -1710,9 +1709,8 @@ void cpu::sbb(u8 &reg)
     set_z_flag(result);
     set_s_flag(result);
     set_p_flag(result);
-    set_c_flag((static_cast<u16>(a) < (static_cast<u16>(reg) + (borrow ? 1 : 0))));
-    set_a_flag_sub_type(a, result, false);
-
+    set_c_flag(static_cast<u16>(a) < (static_cast<u16>(reg) + (borrow ? 1 : 0)));
+    set_a_flag_sub_type(a, reg, false);
     // 4 cycles
 }
 
@@ -1724,7 +1722,6 @@ void cpu::sbb_m()
 
     u8 a = get_a();
 
-    // borrow in this case is just the carry flag
     bool borrow = (get_f() & C_FLAG) != 0;
     u8 result = a - data - (borrow ? 1 : 0);
 
@@ -1733,10 +1730,8 @@ void cpu::sbb_m()
     set_z_flag(result);
     set_s_flag(result);
     set_p_flag(result);
-    set_c_flag((static_cast<u16>(a) < (static_cast<u16>(data) + (borrow ? 1 : 0))));
-    set_a_flag_sub_type(a, result, false);
-
-    // 7 cycles
+    set_c_flag(static_cast<u16>(a) < (static_cast<u16>(data) + (borrow ? 1 : 0)));
+    set_a_flag_sub_type(a, data, false);
 }
 
 // bitwise and reg A and the specified register
@@ -1770,16 +1765,11 @@ void cpu::ana_m()
     u8 result = a & data;
     set_a(result);
 
-    // Standard flags are set based on the result
     set_z_flag(result);
     set_s_flag(result);
     set_p_flag(result);
-    
-    
     set_c_flag(false); 
-    
     set_a_flag_boolean(((a | data) & 0x08) != 0);
-    // 7 cycles
 }
 
 // performs XOR on reg A and the specified register
@@ -1920,8 +1910,6 @@ void cpu::jnz()
 // unconditional jump to a new program address
 void cpu::jmp()
 {
-    u8 f = get_f();
-
     u8 lower = fetch();
     this->cycles += 3;
     u8 upper = fetch();
@@ -2113,7 +2101,7 @@ void cpu::call()
 // add intermediate and carry to accumulator
 void cpu::aci()
 {
-    int carry = get_f() & C_FLAG;
+    u8 carry = (get_f() & C_FLAG) ? 1 : 0;
 
     u8 data = fetch();
     this->cycles += 3;
@@ -2127,8 +2115,6 @@ void cpu::aci()
     set_p_flag(this->a);
     set_c_flag(result > 0xFF);
     set_a_flag_add_type(a, data, false);
-
-    // 7 cycles
 }
 
 // if the zero flag is not set pop from the stack and set pc to new value
@@ -2291,7 +2277,7 @@ void cpu::cc()
 
 void cpu::sbi()
 {
-    int borrow = (get_f() & C_FLAG);
+    u8 borrow = (get_f() & C_FLAG) ? 1 : 0;
 
     u8 data = fetch();
     this->cycles += 3;
@@ -2305,8 +2291,6 @@ void cpu::sbi()
     set_p_flag(this->a);
     set_c_flag(static_cast<u16>(a) < (static_cast<u16>(data) + borrow));
     set_a_flag_sub_type(a, data, false);
-
-    // 7 cycles
 }
 
 void cpu::rpo()
@@ -2631,48 +2615,13 @@ void cpu::cpi()
     this->cycles += 3;
 
     u8 a = get_a();
-    u16 res_16 = static_cast<u16>(a) - data;
+    u8 result = a - data;
 
-    u8 res_8 = static_cast<u8>(res_16);
-
-    u8 flags = 0;
-
-    // set z flag
-    if (res_8 == 0)
-    {
-        flags |= Z_FLAG;
-    }
-    // set s flag
-    if (res_8 & S_FLAG)
-    {
-        flags |= S_FLAG;
-    }
-
-    // set c flag
-    if (a < data)
-    {
-        flags |= C_FLAG;
-    }
-
-    // set p flag
-    int parity_bits = 0;
-    u8 temp = res_8;
-    while (temp) {
-        parity_bits += temp & 1;
-        temp >>= 1;
-    }
-    if (parity_bits % 2 == 0)
-    {
-        flags |= P_FLAG;
-    }
-
-    // set A flag
-    if (((a & 0x0F) - (data & 0x0F)) & 0x10)
-    {
-        flags |= 0x10;
-    }
-
-    set_f(flags);
+    set_z_flag(result);
+    set_s_flag(result);
+    set_p_flag(result);
+    set_c_flag(a < data);
+    set_a_flag_sub_type(a, data, false);
 }
 
 // push reg pair onto stack
