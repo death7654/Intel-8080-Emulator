@@ -14,7 +14,7 @@ extern "C"
 
 #define VRAM_SIZE 0x1C00
 #define VRAM_START 0x2400
-#define VRAM_END 0x3FFF
+#define VRAM_END 0x4000
 
 const u32 COLOR_ON  = 0xFFFFFFFF;
 const u32 COLOR_OFF = 0xFF000000;
@@ -37,6 +37,8 @@ public:
     void initialize_sdl();
     void draw_screen();
     void present();
+
+    void create_window();
 };
 
 void display::initialize_sdl()
@@ -47,19 +49,29 @@ void display::initialize_sdl()
         return;
     }
 
-    // create window
-    window = SDL_CreateWindow("Space Invaders Emulator",
-                          WIDTH * SCALE,
-                          HEIGHT * SCALE,
-                          0);
 
-    // create renderer
+    window = SDL_CreateWindow("Space Invaders Emulator",
+                              WIDTH * SCALE,
+                              HEIGHT * SCALE,
+                              0);
+
+    if (!window) {
+        printf("SDL_CreateWindow failed: %s\n", SDL_GetError());
+        return;
+    }
+    
     renderer = SDL_CreateRenderer(window, NULL);
+    
+    if (!renderer) {
+        printf("SDL_CreateRenderer failed: %s\n", SDL_GetError());
+        return;
+    }
+    
     texture = SDL_CreateTexture(renderer,
-                            SDL_PIXELFORMAT_ARGB8888,
-                            SDL_TEXTUREACCESS_STREAMING,
-                            WIDTH,
-                            HEIGHT);
+                                SDL_PIXELFORMAT_ARGB8888,
+                                SDL_TEXTUREACCESS_STREAMING,
+                                WIDTH,
+                                HEIGHT);
 }
 display::display(memory* mem) : ram(mem)
 {

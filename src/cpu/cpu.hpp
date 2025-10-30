@@ -5,11 +5,11 @@
 
 
 // flags: bits 5 and 3 are always 0, bit 1 is always 1
-#define S_FLAG 0b10000010;
-#define Z_FLAG 0b01000010;
-#define A_FLAG 0b00010010;
-#define P_FLAG 0b00000110;
-#define C_FLAG 0b00000011;
+#define S_FLAG 0x80
+#define Z_FLAG 0x40
+#define A_FLAG 0x10
+#define P_FLAG 0x04
+#define C_FLAG 0x01
 
 class cpu
 {
@@ -39,6 +39,14 @@ private:
 public:
     cpu(memory* mem); 
     ~cpu();
+
+    u64 get_cycles();
+    void generate_interrupt(int interrupt_id);
+    void handle_bdos();
+
+    void call1();
+
+    void set_pc(u16 input);
 
     // get reg values
     u8 get_a();
@@ -121,10 +129,10 @@ public:
 
     void rlc();
 
-    void dad(u8 &upper_a_reg, u8 &lower_a_reg);
+    void dad(const u8 &upper_a_reg, const u8 &lower_a_reg);
     void dad_sp();
 
-    void ldax(u8 &upper_reg, u8 &lower_reg);
+    void ldax(const u8 &upper_reg, const u8 &lower_reg);
     void lda();
 
     void dcx(u8 &upper_reg, u8 &lower_reg);

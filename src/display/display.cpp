@@ -12,15 +12,20 @@ void display::draw_screen()
         {
             bool pixel_on = ((output >> bit) & 1) == 1;
 
-            int mem_x = (vram_offset % 32) * 8 + (7 - bit); 
-            int mem_y = vram_offset / 32; 
+            int mem_y = (vram_offset % 32) * 8 + bit;
+            int mem_x = vram_offset / 32; 
 
             int screen_x = mem_y;
             int screen_y = HEIGHT - 1 - mem_x;
 
-            int buffer_index = (screen_y * WIDTH) + screen_x;
+            if (screen_x < 0 || screen_x >= WIDTH || screen_y < 0 || screen_y >= HEIGHT) {
+                continue;  // Skip invalid pixels
+            }
 
-            pixel_buffer[buffer_index] = pixel_on ? COLOR_ON : COLOR_OFF;
+            if (screen_x >= 0 && screen_x < WIDTH && screen_y >= 0 && screen_y < HEIGHT) {
+                int buffer_index = (screen_y * WIDTH) + screen_x;
+                pixel_buffer[buffer_index] = pixel_on ? COLOR_ON : COLOR_OFF;
+            }
         }
     }
 }
@@ -46,3 +51,4 @@ void display::present()
     SDL_RenderTexture(renderer, texture, nullptr, nullptr);    
     SDL_RenderPresent(renderer);
 }
+

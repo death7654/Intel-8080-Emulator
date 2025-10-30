@@ -4,13 +4,15 @@
 #include "../memory/memory.cpp"
 #include "../cpu/cpu.cpp"
 
+#define CORE_FREQ 1996800
+
 class emulator
 {
 
 private:
-    cpu CPU;
 
 public:
+    cpu CPU;
     memory MEMORY;
     display DISPLAY;
     emulator(/* args */);

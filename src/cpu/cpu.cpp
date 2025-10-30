@@ -9,7 +9,7 @@
 #define get_register_16bit(high_reg, low_reg)         \
     u16 cpu::get_##high_reg##low_reg()                \
     {                                                 \
-        return (this->high_reg << 8) | this->low_reg; \
+        return ( (static_cast<u16>(this->high_reg) << 8) | this->low_reg ); \
     }
 
 #define set_register(reg)        \
@@ -18,12 +18,12 @@
         this->reg = data;        \
     }
 
-#define set_register_16bit(high_reg, low_reg)   \
-    void cpu::set_##high_reg##low_reg(u16 data) \
-    {                                           \
-        this->a = data >> 8;                    \
-        this->b = static_cast<u8>(data);        \
-    }
+#define set_register_16bit(high_reg, low_reg) \
+void cpu::set_##high_reg##low_reg(u16 data)   \
+{                                             \
+    this->high_reg = static_cast<u8>(data >> 8); \
+    this->low_reg = static_cast<u8>(data & 0xFF); \
+}
 
 get_register(a);
 get_register(b);
@@ -46,6 +46,75 @@ set_register(f);
 get_register_16bit(b, c);
 get_register_16bit(d, e);
 get_register_16bit(h, l);
+
+u64 cpu::get_cycles()
+{
+    return this->cycles;
+}
+
+void cpu::handle_bdos()
+{
+    // BDOS function number is in register C
+    u8 func = get_c();
+
+    switch (func)
+    {
+    case 2: // print character in E
+    {
+        u8 ch = get_e();
+        putchar((char)ch);
+        fflush(stdout);
+        break;
+    }
+    case 9: // print $-terminated string at address DE
+    {
+        u16 addr = (static_cast<u16>(get_d()) << 8) | get_e();
+        for (;; addr++)
+        {
+            u8 ch = ram->read(addr);
+            if (ch == '$') break;
+            putchar((char)ch);
+        }
+        fflush(stdout);
+        break;
+    }
+    default:
+        // unknown BDOS function; print small debug info
+        fprintf(stderr, "[BDOS] func=%u (ignored)\n", func);
+        break;
+    }
+
+    // Emulate BDOS return (CALL 0x0005): the CALL pushed return PC on stack.
+    // We should return to the caller as if a RET was executed.
+    // pop_get_value() returns the saved return address and advances SP.
+    this->pc = pop_get_value();
+}
+
+void cpu::set_pc(u16 input)
+{
+    this->pc = input;
+}
+
+void cpu::generate_interrupt(int interrupt_id) {
+    if (!(this->interrupts)) {
+        return;
+    }
+
+    this->interrupts = false;
+
+    int n_value = 0;
+
+    if (interrupt_id == 1) {
+        n_value = 1; 
+    } else if (interrupt_id == 2) {
+        n_value = 2;
+    } else {
+        return; 
+    }
+    
+    this->rst(n_value); 
+    
+}
 
 u16 cpu::get_sp()
 {
@@ -176,7 +245,7 @@ void cpu::execute(u8 instruction)
         nop();
         break;
     case 0x21:
-        lxi(this->h, this->f);
+        lxi(this->h, this->l);
         break;
     case 0x22:
         shld();
@@ -695,7 +764,7 @@ void cpu::execute(u8 instruction)
         jz();
         break;
     case 0xCB:
-        jmp();
+        nop();
         break;
     case 0xCC:
         cz();
@@ -739,6 +808,7 @@ void cpu::execute(u8 instruction)
         rc();
         break;
     case 0xD9:
+        nop();
         break;
     case 0xDA:
         jc();
@@ -750,6 +820,7 @@ void cpu::execute(u8 instruction)
         cc();
         break;
     case 0xDD:
+        nop();
         break;
     case 0xDE:
         sbi();
@@ -798,6 +869,7 @@ void cpu::execute(u8 instruction)
         cpe();
         break;
     case 0xED:
+        nop();
         break;
     case 0xEE:
         xri();
@@ -805,12 +877,12 @@ void cpu::execute(u8 instruction)
     case 0xEF:
         rst(5);
         break;
-
+    // 0xF0 -> 0xFF
     case 0xF0:
         rp();
         break;
     case 0xF1:
-        rp();
+        pop(this->a, this->f);
         break;
     case 0xF2:
         jp();
@@ -846,6 +918,7 @@ void cpu::execute(u8 instruction)
         cm();
         break;
     case 0xFD:
+        nop();
         break;
     case 0xFE:
         cpi();
@@ -863,7 +936,7 @@ void cpu::execute(u8 instruction)
 void cpu::set_s_flag(u8 &reg)
 {
     u8 f_reg = get_f();
-    if ((reg & 0x80) != 0)
+    if ((reg & S_FLAG) != 0)
     {
         f_reg |= S_FLAG;
     }
@@ -907,7 +980,7 @@ void cpu::set_a_flag_add_type(u8 val1, u8 val2, bool is_increment)
 
     if (condition)
     {
-        f_reg |= A_FLAG;
+        f_reg |= A_FLAG; 
     }
     else
     {
@@ -932,7 +1005,7 @@ void cpu::set_a_flag_sub_type(u8 val1, u8 val2, bool is_decrement)
 
     if (condition)
     {
-        f_reg |= A_FLAG;
+        f_reg |= A_FLAG; 
     }
     else
     {
@@ -961,7 +1034,7 @@ void cpu::set_p_flag(u8 &reg)
     int count = 0;
     for (int i = 0; i < 8; i++)
     {
-        if ((reg >> i & 0x01) == 1)
+        if ((reg >> i & C_FLAG) == 1)
         {
             count++;
         }
@@ -1148,24 +1221,34 @@ void cpu::mvi_m()
 void cpu::rlc()
 {
     u8 data = get_a();
-    u8 msb = data & 0x80;
-    data = data << 1 | msb;
+    u8 msb = (data & S_FLAG) ? 1 : 0;
+    data = (data << 1) | msb;
     set_a(data);
     set_c_flag(msb != 0);
 
     // 4 cycles
 }
 // double add 16 bit reg
-void cpu::dad(u8 &upper_a_reg, u8 &lower_a_reg)
+void cpu::dad(const u8 &upper_a_reg, const u8 &lower_a_reg)
 {
     u16 a = (static_cast<u16>(upper_a_reg << 8)) | lower_a_reg;
+    
     u16 b = get_hl();
-    u32 result = a + b; // 32 bit to check for overflow
-
-    set_c_flag(result > 0xFFFF);
+    
+    u32 result = a + b;
 
     set_hl(static_cast<u16>(result));
+    
+    u8 flags = get_f();
+ 
+    flags &= ~C_FLAG; 
 
+    if (result > 0xFFFF)
+    {
+        flags |= C_FLAG;
+    }
+
+    set_f(flags);
     this->cycles += 6;
     // takes 10 cycles
 }
@@ -1181,13 +1264,24 @@ void cpu::dad_sp()
 
     set_hl(static_cast<u16>(result));
 
+    u8 flags = get_f(); 
+    
+    flags &= ~C_FLAG; 
+
+    if (result > 0xFFFF)
+    {
+        flags |= C_FLAG;
+    }
+
+    set_f(flags);
+
     this->cycles += 6;
     // 10 cycles
 }
 
 // load data from memory at address found in 16 bit register pair
-void cpu::ldax(u8 &upper_reg, u8 &lower_reg)
-{
+void cpu::ldax(const u8 &upper_reg, const u8 &lower_reg){
+
     u16 address = (static_cast<u16>(upper_reg << 8)) | lower_reg;
     u8 data = ram->read(address);
     set_a(data);
@@ -1220,7 +1314,7 @@ void cpu::dcx_sp()
 void cpu::rrc()
 {
     u8 a = get_a();
-    u8 lsb = a & 0x01;
+    u8 lsb = (a & C_FLAG) ? 1 : 0;
     a = (a >> 1) | (lsb << 7);
     set_a(a);
     set_c_flag(lsb != 0);
@@ -1232,14 +1326,10 @@ void cpu::rrc()
 void cpu::ral()
 {
     u8 a = get_a();
-    u8 msb = a & 0x80;
-    bool carry_flag = (get_f() & 0x01) != 0;
-    a = a << 1;
+    u8 msb = (a & S_FLAG) ? 1 : 0;
+    bool carry_flag = (get_f() & C_FLAG) != 0;
+    a = (a << 1) | (carry_flag ? 1 : 0);
 
-    if (carry_flag)
-    {
-        a |= 0x01;
-    }
     set_a(a);
 
     set_c_flag(msb != 0);
@@ -1250,19 +1340,10 @@ void cpu::ral()
 void cpu::rar()
 {
     u8 a = get_a();
-    u8 lsb = a & 0x01;
-    bool original_carry_flag = (get_f() & 0x01) != 0;
+    u8 lsb = (a & C_FLAG) ? 1 : 0;
+    bool original_carry_flag = (get_f() & C_FLAG) != 0;
 
-    a >>= 1;
-
-    if (original_carry_flag)
-    {
-        a |= 0x80;
-    }
-    else
-    {
-        a &= ~0x80;
-    }
+    a = (a >> 1) | (original_carry_flag ? S_FLAG : 0x00);
 
     set_a(a);
 
@@ -1298,8 +1379,8 @@ void cpu::daa()
     u8 a = old_a;
 
     u8 current_flags = get_f();
-    bool original_carry = (current_flags & 0x01) != 0;
-    bool original_aux_carry = (current_flags & 0b00010010) != 0;
+    bool original_carry = (current_flags & C_FLAG) != 0;
+    bool original_aux_carry = (current_flags & A_FLAG) != 0;
 
     bool carry_set_by_daa_adjustment = false;
     bool aux_carry_set_by_daa_adjustment = false;
@@ -1415,7 +1496,7 @@ void cpu::stc()
 void cpu::cmc()
 {
     u8 flags = get_f();
-    flags ^= 0x01;
+    flags ^= C_FLAG;
     set_f(flags);
 
     // 4 cycles
@@ -1482,10 +1563,12 @@ void cpu::add(u8 &reg)
     set_s_flag(this->a);
     set_p_flag(this->a);
     set_c_flag(result > 0xFF);
-    set_a_flag_add_type(old_a, a, false);
+    
+    set_a_flag_add_type(old_a, reg, false); 
     // 4 cycles
 }
 
+// add memory data to reg a
 // add memory data to reg a
 void cpu::add_m()
 {
@@ -1502,8 +1585,10 @@ void cpu::add_m()
     set_s_flag(this->a);
     set_p_flag(this->a);
     set_c_flag(result > 0xFF);
-    set_a_flag_add_type(old_a, a, false);
-    // 4 cycles
+    
+    set_a_flag_add_type(old_a, data, false); 
+    
+    // 7 cycles
 }
 
 // add with carry
@@ -1516,8 +1601,16 @@ void cpu::adc(u8 &reg)
     u8 carry = f & C_FLAG;
     if (carry != 0)
     {
-        result++;
+        
+        set_a_flag_add_type(old_a, reg, false); 
+        
+        result++; 
     }
+    else 
+    {
+        set_a_flag_add_type(old_a, reg, false); 
+    }
+    
 
     u8 a = static_cast<u8>(result);
     set_a(a);
@@ -1526,9 +1619,12 @@ void cpu::adc(u8 &reg)
     set_s_flag(this->a);
     set_p_flag(this->a);
     set_c_flag(result > 0xFF);
-    set_a_flag_add_type(old_a, a, false);
+
+    
+    // 4 cycles
 }
 
+// add specified memory with carry
 // add specified memory with carry
 void cpu::adc_m()
 {
@@ -1543,7 +1639,13 @@ void cpu::adc_m()
     u8 carry = f & C_FLAG;
     if (carry != 0)
     {
+        set_a_flag_add_type(old_a, data, false); 
+
         result++;
+    }
+    else 
+    {
+        set_a_flag_add_type(old_a, data, false); 
     }
 
     u8 a = static_cast<u8>(result);
@@ -1553,8 +1655,9 @@ void cpu::adc_m()
     set_s_flag(this->a);
     set_p_flag(this->a);
     set_c_flag(result > 0xFF);
-    set_a_flag_add_type(old_a, a, false);
-    // 4 cycles
+    
+    
+    // 7 cycles
 }
 
 // sub a from the specified memory
@@ -1599,7 +1702,7 @@ void cpu::sbb(u8 &reg)
     u8 a = get_a();
 
     // borrow in this case is just the carry flag
-    bool borrow = get_f() & 0b00000001 != 0;
+    bool borrow = (get_f() & C_FLAG) != 0;
     u8 result = a - reg - (borrow ? 1 : 0);
 
     set_a(result);
@@ -1607,7 +1710,7 @@ void cpu::sbb(u8 &reg)
     set_z_flag(result);
     set_s_flag(result);
     set_p_flag(result);
-    set_c_flag((a < reg) || (a - reg < (borrow ? 1 : 0)));
+    set_c_flag((static_cast<u16>(a) < (static_cast<u16>(reg) + (borrow ? 1 : 0))));
     set_a_flag_sub_type(a, result, false);
 
     // 4 cycles
@@ -1622,7 +1725,7 @@ void cpu::sbb_m()
     u8 a = get_a();
 
     // borrow in this case is just the carry flag
-    bool borrow = get_f() & 0b00000001 != 0;
+    bool borrow = (get_f() & C_FLAG) != 0;
     u8 result = a - data - (borrow ? 1 : 0);
 
     set_a(result);
@@ -1630,7 +1733,7 @@ void cpu::sbb_m()
     set_z_flag(result);
     set_s_flag(result);
     set_p_flag(result);
-    set_c_flag((a < data) || (a - data < (borrow ? 1 : 0)));
+    set_c_flag((static_cast<u16>(a) < (static_cast<u16>(data) + (borrow ? 1 : 0))));
     set_a_flag_sub_type(a, result, false);
 
     // 7 cycles
@@ -1643,11 +1746,16 @@ void cpu::ana(u8 &reg)
     u8 result = a & reg;
     set_a(result);
 
+    // Standard flags are set based on the result
     set_z_flag(result);
     set_s_flag(result);
     set_p_flag(result);
-    set_c_flag(false);
-    set_a_flag_boolean(((a | reg) & 0x08) != 0);
+    
+    
+    set_c_flag(false); 
+    
+    set_a_flag_boolean(((a | reg) & 0x08) != 0); 
+
     // 4 cycles
 }
 
@@ -1657,17 +1765,20 @@ void cpu::ana_m()
 
     u16 address = get_hl();
     u8 data = ram->read(address);
-    this->cycles += 3;
+    this->cycles += 3; 
 
     u8 result = a & data;
     set_a(result);
 
+    // Standard flags are set based on the result
     set_z_flag(result);
     set_s_flag(result);
     set_p_flag(result);
-    set_c_flag(false);
+    
+    
+    set_c_flag(false); 
+    
     set_a_flag_boolean(((a | data) & 0x08) != 0);
-
     // 7 cycles
 }
 
@@ -1736,7 +1847,7 @@ void cpu::ora_m()
     set_p_flag(result);
     set_c_flag(false);
     set_a_flag_boolean(false);
-    // 4 cycles
+    // 7 cycles
 }
 
 // compare the value of reg a and the specified register
@@ -1776,7 +1887,7 @@ void cpu::cmp_m()
 void cpu::rnz()
 {
     u8 f = get_f();
-    bool zero = (f & 0x40) != 0;
+    bool zero = (f & Z_FLAG) != 0;
 
     if (!zero)
     {
@@ -1791,7 +1902,7 @@ void cpu::rnz()
 void cpu::jnz()
 {
     u8 f = get_f();
-    bool zero = (f & 0x40) != 0;
+    bool zero = (f & Z_FLAG) != 0;
 
     u8 lower = fetch();
     this->cycles += 3;
@@ -1810,7 +1921,6 @@ void cpu::jnz()
 void cpu::jmp()
 {
     u8 f = get_f();
-    bool zero = (f & 0x40) != 0;
 
     u8 lower = fetch();
     this->cycles += 3;
@@ -1827,7 +1937,7 @@ void cpu::jmp()
 void cpu::cnz()
 {
     u8 f = get_f();
-    bool zero = (f & 0x40) != 0;
+    bool zero = (f & Z_FLAG) != 0;
 
     u8 lower = fetch();
     this->cycles += 3;
@@ -1860,14 +1970,14 @@ void cpu::adi()
     u8 b = fetch();
     this->cycles += 3;
 
-    u8 result = a + b;
-    set_a(result);
+    u16 result = static_cast<u16>(a) + static_cast<u16>(b);
+    set_a(static_cast<u8>(result));
 
     set_z_flag(this->a);
     set_s_flag(this->a);
     set_p_flag(this->a);
     set_c_flag(result > 0xFF);
-    set_a_flag_add_type(a, result, false);
+    set_a_flag_add_type(a, b, false);
 
     // 7 cycles
 }
@@ -1887,7 +1997,7 @@ void cpu::rst(int n)
 void cpu::rz()
 {
     u8 flags = get_f();
-    bool z_set = (flags & 0b01000000) != 0;
+    bool z_set = (flags & Z_FLAG) != 0;
 
     if (z_set)
     {
@@ -1911,7 +2021,7 @@ void cpu::ret()
 void cpu::jz()
 {
     u8 flags = get_f();
-    bool z_set = (flags & 0b01000000) != 0;
+    bool z_set = (flags & Z_FLAG) != 0;
 
     u16 low_byte = fetch();
     this->cycles += 3;
@@ -1936,7 +2046,7 @@ void cpu::cz()
     this->cycles += 3;
 
     u8 flags = get_f();
-    bool z_set = (flags & 0b01000000) != 0;
+    bool z_set = (flags & Z_FLAG) != 0;
 
     if (z_set)
     {
@@ -1955,6 +2065,37 @@ void cpu::cz()
 }
 
 // saves the pc into the stack and jumps the next instruction
+
+
+void cpu::call1()
+{
+     u8 low = fetch();    // these increments PC and add cycles elsewhere in code; keep your cycle accounting consistent
+    this->cycles += 3;
+    u8 high = fetch();
+    this->cycles += 3;
+    u16 addr = (static_cast<u16>(high) << 8) | low;
+
+    if (addr == 0x0005) {
+        // emulate CALL 0x0005 -> BDOS handler
+        // push return address (current PC) onto stack just as CALL would
+        u16 ret_addr = this->pc;
+        u8 ret_hi = static_cast<u8>(ret_addr >> 8);
+        u8 ret_lo = static_cast<u8>(ret_addr & 0xFF);
+        // push as CALL would: high then low depending on your push_value semantics
+        push_value(ret_hi, ret_lo);
+        // now call handler; handler will pop return address and set PC
+        handle_bdos();
+    } else {
+        // regular CALL behaviour
+        u16 ret_addr = this->pc;
+        u8 ret_hi = static_cast<u8>(ret_addr >> 8);
+        u8 ret_lo = static_cast<u8>(ret_addr & 0xFF);
+        push_value(ret_hi, ret_lo);
+        this->pc = addr;
+    }
+}
+
+
 void cpu::call()
 {
     push_value((this->pc >> 8), this->pc);
@@ -1972,20 +2113,20 @@ void cpu::call()
 // add intermediate and carry to accumulator
 void cpu::aci()
 {
-    int carry = get_f() & 0x01;
+    int carry = get_f() & C_FLAG;
 
     u8 data = fetch();
     this->cycles += 3;
 
     u8 a = get_a();
-    u8 result = a + data + carry;
-    set_a(result);
+    u16 result = static_cast<u16>(a) + static_cast<u16>(data) + static_cast<u16>(carry);
+    set_a(static_cast<u8>(result));
 
     set_z_flag(this->a);
     set_s_flag(this->a);
     set_p_flag(this->a);
     set_c_flag(result > 0xFF);
-    set_a_flag_add_type(a, result, false);
+    set_a_flag_add_type(a, data, false);
 
     // 7 cycles
 }
@@ -1994,7 +2135,7 @@ void cpu::aci()
 void cpu::rnc()
 {
     u8 f = get_f();
-    bool zero = (f & 0x01) != 0;
+    bool zero = (f & C_FLAG) != 0;
 
     if (!zero)
     {
@@ -2009,7 +2150,7 @@ void cpu::rnc()
 void cpu::jnc()
 {
     u8 f = get_f();
-    bool zero = (f & 0x01) != 0;
+    bool zero = (f & C_FLAG) != 0;
 
     u8 lower = fetch();
     this->cycles += 3;
@@ -2026,21 +2167,14 @@ void cpu::jnc()
 // output accumulator to a port address with the accumator as the data
 void cpu::out()
 {
-    u8 lower = fetch();
+    u8 port = fetch();
     this->cycles += 3;
-
-    u8 upper = fetch();
-    this->cycles += 3;
-
-    printf("Data has been requested to be exported");
-
-    // 10 cycles
 }
 
 void cpu::cnc()
 {
     u8 f = get_f();
-    bool carry = (f & 0x01) != 0;
+    bool carry = (f & C_FLAG) != 0;
 
     u8 lower = fetch();
     this->cycles += 3;
@@ -2077,7 +2211,7 @@ void cpu::sui()
     set_z_flag(this->a);
     set_s_flag(this->a);
     set_p_flag(this->a);
-    set_c_flag(result > 0xFF);
+    set_c_flag(a < data);
     set_a_flag_sub_type(a, result, false);
 
     // 7 cycles
@@ -2086,7 +2220,7 @@ void cpu::sui()
 void cpu::rc()
 {
     u8 flags = get_f();
-    bool carry_set = (flags & 0x01) != 0;
+    bool carry_set = (flags & C_FLAG) != 0;
 
     if (carry_set)
     {
@@ -2102,7 +2236,7 @@ void cpu::rc()
 void cpu::jc()
 {
     u8 flags = get_f();
-    bool z_set = (flags & 0x01) != 0;
+    bool z_set = (flags & C_FLAG) != 0;
 
     u16 low_byte = fetch();
     this->cycles += 3;
@@ -2121,12 +2255,11 @@ void cpu::jc()
 // reads an input
 void cpu::in()
 {
-    u8 half_address = fetch();
+
+    u8 port = fetch();
     this->cycles += 3;
 
-    u16 address = (static_cast<u16>(half_address) << 8) | half_address;
-
-    printf("An input has been requested");
+    //printf("An input has been requested");
 }
 
 // call if the carry flag is set
@@ -2138,7 +2271,7 @@ void cpu::cc()
     this->cycles += 3;
 
     u8 flags = get_f();
-    bool c_set = (flags & 0x01) != 0;
+    bool c_set = (flags & C_FLAG) != 0;
 
     if (c_set)
     {
@@ -2158,7 +2291,7 @@ void cpu::cc()
 
 void cpu::sbi()
 {
-    int borrow = get_f() & 0x01;
+    int borrow = (get_f() & C_FLAG);
 
     u8 data = fetch();
     this->cycles += 3;
@@ -2170,8 +2303,8 @@ void cpu::sbi()
     set_z_flag(this->a);
     set_s_flag(this->a);
     set_p_flag(this->a);
-    set_c_flag(result > 0xFF);
-    set_a_flag_add_type(a, result, false);
+    set_c_flag(static_cast<u16>(a) < (static_cast<u16>(data) + borrow));
+    set_a_flag_sub_type(a, data, false);
 
     // 7 cycles
 }
@@ -2179,7 +2312,7 @@ void cpu::sbi()
 void cpu::rpo()
 {
     u8 f = get_f();
-    bool parity = (f & 0x04) != 0;
+    bool parity = (f & P_FLAG) != 0;
 
     if (!parity)
     {
@@ -2193,7 +2326,7 @@ void cpu::rpo()
 void cpu::jpo()
 {
     u8 f = get_f();
-    bool parity = (f & 0x01) != 0;
+    bool parity = (f & P_FLAG) != 0;
 
     u8 lower = fetch();
     this->cycles += 3;
@@ -2209,11 +2342,10 @@ void cpu::jpo()
 
 void cpu::xthl()
 {
-    u16 stack = pop_get_value();
-    u8 upper = stack >> 8;
-    u8 lower = stack;
-
-    push_value(lower, upper);
+    u16 hl_val = get_hl();
+    u16 stack_val = pop_get_value();
+    push_value(hl_val >> 8, hl_val & 0xFF);
+    set_hl(stack_val);
 
     this->cycles += 1;
 
@@ -2228,7 +2360,7 @@ void cpu::cpo()
     this->cycles += 3;
 
     u8 flags = get_f();
-    bool c_set = (flags & 0x04) != 0;
+    bool c_set = (flags & P_FLAG) != 0;
 
     if (!c_set)
     {
@@ -2259,14 +2391,14 @@ void cpu::ani()
     set_z_flag(this->a);
     set_s_flag(this->a);
     set_p_flag(this->a);
-    set_c_flag(result > 0xFF);
-    set_a_flag_add_type(a, result, false);
+    set_c_flag(false);
+    set_a_flag_boolean(((a | data) & 0x08) != 0);
 }
 
 void cpu::rpe()
 {
     u8 flags = get_f();
-    bool p_set = (flags & 0x04) != 0;
+    bool p_set = (flags & P_FLAG) != 0;
 
     if (p_set)
     {
@@ -2286,7 +2418,7 @@ void cpu::pchl()
 void cpu::jpe()
 {
     u8 flags = get_f();
-    bool p_set = (flags & 0x04) != 0;
+    bool p_set = (flags & P_FLAG) != 0;
 
     u16 low_byte = fetch();
     this->cycles += 3;
@@ -2305,6 +2437,8 @@ void cpu::xchg()
     u16 de = get_de();
     set_de(get_hl());
     set_hl(de);
+
+    this->cycles +=1;
 }
 void cpu::cpe()
 {
@@ -2314,7 +2448,7 @@ void cpu::cpe()
     this->cycles += 3;
 
     u8 flags = get_f();
-    bool c_set = (flags & 0x04) != 0;
+    bool c_set = (flags & P_FLAG) != 0;
 
     if (c_set)
     {
@@ -2340,17 +2474,19 @@ void cpu::xri()
     u8 a = get_a();
     u8 result = a ^ data;
 
+    set_a(result);
+
     set_z_flag(this->a);
     set_s_flag(this->a);
     set_p_flag(this->a);
-    set_c_flag(result > 0xFF);
-    set_a_flag_add_type(a, result, false);
+    set_c_flag(false);
+    set_a_flag_boolean(false);
 }
 
 void cpu::rp()
 {
     u8 flags = get_f();
-    bool s_set = (flags & 0x80) != 0;
+    bool s_set = (flags & S_FLAG) != 0;
 
     if (!s_set)
     {
@@ -2363,7 +2499,7 @@ void cpu::rp()
 void cpu::jp()
 {
     u8 flags = get_f();
-    bool s_set = (flags & 0x80) != 0;
+    bool s_set = (flags & S_FLAG) != 0;
 
     u16 low_byte = fetch();
     this->cycles += 3;
@@ -2390,7 +2526,7 @@ void cpu::cp()
     this->cycles += 3;
 
     u8 flags = get_f();
-    bool s_set = (flags & 0x80) != 0;
+    bool s_set = (flags & S_FLAG) != 0;
 
     if (!s_set)
     {
@@ -2420,14 +2556,14 @@ void cpu::ori()
     set_z_flag(this->a);
     set_s_flag(this->a);
     set_p_flag(this->a);
-    set_c_flag(result > 0xFF);
-    set_a_flag_add_type(a, result, false);
+    set_c_flag(false);
+    set_a_flag_boolean(false);
 }
 
 void cpu::rm()
 {
     u8 flags = get_f();
-    bool s_set = (flags & 0x80) != 0;
+    bool s_set = (flags & S_FLAG) != 0;
 
     if (s_set)
     {
@@ -2446,7 +2582,7 @@ void cpu::sphl()
 void cpu::jm()
 {
     u8 flags = get_f();
-    bool s_set = (flags & 0x80) != 0;
+    bool s_set = (flags & S_FLAG) != 0;
 
     u16 low_byte = fetch();
     this->cycles += 3;
@@ -2473,7 +2609,7 @@ void cpu::cm()
     this->cycles += 3;
 
     u8 flags = get_f();
-    bool s_set = (flags & 0x80) != 0;
+    bool s_set = (flags & S_FLAG) != 0;
 
     if (s_set)
     {
@@ -2504,29 +2640,30 @@ void cpu::cpi()
     // set z flag
     if (res_8 == 0)
     {
-        flags |= 0x40;
+        flags |= Z_FLAG;
     }
     // set s flag
-    if (res_8 & 0x80)
+    if (res_8 & S_FLAG)
     {
-        flags |= 0x80;
+        flags |= S_FLAG;
     }
 
     // set c flag
-    if ((res_16 & 0x100) == 0x100)
+    if (a < data)
     {
-        flags |= 0x01;
+        flags |= C_FLAG;
     }
 
     // set p flag
     int parity_bits = 0;
-    while (res_8) {
-        parity_bits += res_8 & 1;
-        res_8 >>= 1;
+    u8 temp = res_8;
+    while (temp) {
+        parity_bits += temp & 1;
+        temp >>= 1;
     }
     if (parity_bits % 2 == 0)
     {
-        flags |= 0x04;
+        flags |= P_FLAG;
     }
 
     // set A flag
