@@ -44,8 +44,8 @@ void emulator::run()
         
         CPU.generate_interrupt(1);
         
-        DISPLAY.draw_screen();
-        DISPLAY.present();
+        //DISPLAY.draw_screen();
+        //DISPLAY.present();
         
         //is_running = handle_events();
         
@@ -54,4 +54,9 @@ void emulator::run()
             SDL_Delay(MS_PER_FRAME - frame_time);
         }
     }
+}
+
+bool emulator::handle_events()
+{
+    return false;
 }

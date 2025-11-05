@@ -54,42 +54,54 @@ u64 cpu::get_cycles()
 
 void cpu::handle_bdos()
 {
-    // BDOS function number is in register C
     u8 func = get_c();
+    //printf("[BDOS] Function, %d\n", func);
 
     switch (func)
     {
-    case 2: // print character in E
+    case 1: // Console input
+        set_a('A'); // Pretend user pressed 'A'
+        break;
+
+    case 2: // Console output
     {
         u8 ch = get_e();
         putchar((char)ch);
         fflush(stdout);
         break;
     }
-    case 9: // print $-terminated string at address DE
+
+    case 9: // Print $-terminated string
     {
-        u16 addr = (static_cast<u16>(get_d()) << 8) | get_e();
-        for (;; addr++)
+        u16 addr = (get_d() << 8) | get_e();
+        printf("[BDOS] Print string from 0x%04X\n", addr);
+
+        int count = 0;
+        while (count++ < 1024) // safety guard
         {
-            u8 ch = ram->read(addr);
+            u8 ch = ram->read(addr++);
             if (ch == '$') break;
-            putchar((char)ch);
+            if (ch >= 32 && ch <= 126) putchar((char)ch);
+            else printf("[%02X]", ch);
         }
+        putchar('\n'); 
         fflush(stdout);
         break;
     }
+
+    case 16: // Select Disk
+        set_a(0); // Always success
+        break;
+
     default:
-        // unknown BDOS function; print small debug info
-        fprintf(stderr, "[BDOS] func=%u (ignored)\n", func);
+        printf("[BDOS] func=%u (ignored)\n", func);
         break;
     }
 
-    // Emulate BDOS return (CALL 0x0005): the CALL pushed return PC on stack.
-    // We should return to the caller as if a RET was executed.
-    // pop_get_value() returns the saved return address and advances SP.
+    // Return from CALL 0x0005
     this->pc = pop_get_value();
+    this->cycles += 10;
 }
-
 void cpu::set_pc(u16 input)
 {
     this->pc = input;
@@ -504,6 +516,7 @@ void cpu::execute(u8 instruction)
         mov_mr(this->l);
         break;
     case 0x76:
+        printf("[CPU] HLT reached at 0x%04X\n", pc - 1);
         halt();
         break;
     case 0x77:
@@ -1221,7 +1234,7 @@ void cpu::mvi_m()
 void cpu::rlc()
 {
     u8 data = get_a();
-    u8 msb = (data & S_FLAG) ? 1 : 0;
+    u8 msb = (data & 0x80) ? 1 : 0;
     data = (data << 1) | msb;
     set_a(data);
     set_c_flag(msb != 0);
@@ -1231,7 +1244,7 @@ void cpu::rlc()
 // double add 16 bit reg
 void cpu::dad(const u8 &upper_a_reg, const u8 &lower_a_reg)
 {
-    u16 a = (static_cast<u16>(upper_a_reg << 8)) | lower_a_reg;
+    u16 a = (static_cast<u16>(upper_a_reg) << 8) | lower_a_reg;
     
     u16 b = get_hl();
     
@@ -1375,67 +1388,53 @@ void cpu::shld()
 // converts a illegal bcd into legal bcd
 void cpu::daa()
 {
-    u8 old_a = get_a();
-    u8 a = old_a;
+    u8 a = get_a();
+    u8 flags = get_f();
 
-    u8 current_flags = get_f();
-    bool original_carry = (current_flags & C_FLAG) != 0;
-    bool original_aux_carry = (current_flags & A_FLAG) != 0;
+    bool original_carry = (flags & C_FLAG) != 0;
+    bool original_aux_carry = (flags & A_FLAG) != 0;
 
-    bool carry_set_by_daa_adjustment = false;
-    bool aux_carry_set_by_daa_adjustment = false;
+    u8 correction = 0x00;
+    bool new_carry = original_carry;
 
     if ((a & 0x0F) > 0x09 || original_aux_carry)
     {
-        a += 0x06;
-        aux_carry_set_by_daa_adjustment = true;
+        correction |= 0x06;
+        flags |= A_FLAG;
     }
-
-    if ((a & 0xF0) > 0x90 || original_carry)
+    else
     {
-        u16 temp_sum = (u16)a + 0x60;
-        a = (u8)temp_sum;
-        if (temp_sum > 0xFF)
-        {
-            carry_set_by_daa_adjustment = true;
-        }
+        flags &= ~A_FLAG;
     }
 
+    if ((a > 0x99) || original_carry)
+    {
+        correction |= 0x60;
+        new_carry = true;
+    }
+    else if ((a + (correction & 0x0F)) > 0x9F)
+    {
+        correction |= 0x60;
+        new_carry = true;
+    }
+
+    a += correction;
     set_a(a);
 
-    set_s_flag(this->a);
-    set_z_flag(this->a);
-    set_p_flag(this->a);
+    set_s_flag(a);
+    set_z_flag(a);
+    set_p_flag(a);
 
-    u8 final_flags = get_f();
-
-    if (aux_carry_set_by_daa_adjustment)
+    if (new_carry)
     {
-        final_flags |= A_FLAG;
+        flags |= C_FLAG;
     }
     else
     {
-        final_flags &= ~A_FLAG;
+        flags &= ~C_FLAG;
     }
 
-    if (carry_set_by_daa_adjustment)
-    {
-        final_flags |= C_FLAG;
-    }
-    else
-    {
-        if (original_carry)
-        {
-            final_flags |= C_FLAG;
-        }
-        else
-        {
-            final_flags &= ~C_FLAG;
-        }
-    }
-    set_f(final_flags);
-
-    // 4 cycles
+    set_f(flags);
 }
 
 // loads memory into a specified address into 16 bit address HL
@@ -2053,48 +2052,23 @@ void cpu::cz()
 }
 
 // saves the pc into the stack and jumps the next instruction
-
-
-void cpu::call1()
-{
-     u8 low = fetch();    // these increments PC and add cycles elsewhere in code; keep your cycle accounting consistent
-    this->cycles += 3;
-    u8 high = fetch();
-    this->cycles += 3;
-    u16 addr = (static_cast<u16>(high) << 8) | low;
-
-    if (addr == 0x0005) {
-        // emulate CALL 0x0005 -> BDOS handler
-        // push return address (current PC) onto stack just as CALL would
-        u16 ret_addr = this->pc;
-        u8 ret_hi = static_cast<u8>(ret_addr >> 8);
-        u8 ret_lo = static_cast<u8>(ret_addr & 0xFF);
-        // push as CALL would: high then low depending on your push_value semantics
-        push_value(ret_hi, ret_lo);
-        // now call handler; handler will pop return address and set PC
-        handle_bdos();
-    } else {
-        // regular CALL behaviour
-        u16 ret_addr = this->pc;
-        u8 ret_hi = static_cast<u8>(ret_addr >> 8);
-        u8 ret_lo = static_cast<u8>(ret_addr & 0xFF);
-        push_value(ret_hi, ret_lo);
-        this->pc = addr;
-    }
-}
-
-
 void cpu::call()
 {
-    push_value((this->pc >> 8), this->pc);
-
     u8 lower = fetch();
     this->cycles += 3;
     u8 upper = fetch();
     this->cycles += 3;
 
-    u16 new_pc = (static_cast<u16>(upper) << 8) | lower;
-    this->pc = new_pc;
+    u16 addr = (static_cast<u16>(upper) << 8) | lower;
+
+    // Push return address onto stack
+    push_value((this->pc >> 8), this->pc & 0xFF);
+
+    if (addr == 0x0005) {
+        handle_bdos();
+    } else {
+        this->pc = addr;
+    }
     // 17 cycles
 }
 
@@ -2245,7 +2219,28 @@ void cpu::in()
     u8 port = fetch();
     this->cycles += 3;
 
+    u8 value = in_port(port); // call an internal I/O read function
+    set_a(value); 
+    this->cycles +=3;
+
     //printf("An input has been requested");
+}
+
+u8 cpu::in_port(u8 port)
+{
+    static bool toggle = false;
+    switch (port)
+    {
+    case 0x00:
+        return 0x00;
+
+    case 0x01:
+        // Supersoft timing test expects bit 6 (0x40) to toggle
+        toggle = !toggle;
+        return toggle ? 0x40 : 0x00; // Flip bit 6 every read
+    default:
+        return 0x00; // Default: no input
+    }
 }
 
 // call if the carry flag is set

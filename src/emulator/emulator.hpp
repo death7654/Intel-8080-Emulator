@@ -18,6 +18,7 @@ public:
     emulator(/* args */);
     ~emulator();
     void run();
+    bool handle_events();
 };
 
 emulator::emulator()

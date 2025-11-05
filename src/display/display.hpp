@@ -76,7 +76,7 @@ void display::initialize_sdl()
 display::display(memory* mem) : ram(mem)
 {
     memset(pixel_buffer, 0, sizeof(pixel_buffer));
-    initialize_sdl();
+    //initialize_sdl();
 }
 
 display::~display()

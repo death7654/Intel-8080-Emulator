@@ -15,8 +15,8 @@ void display::draw_screen()
             int mem_y = (vram_offset % 32) * 8 + bit;
             int mem_x = vram_offset / 32; 
 
-            int screen_x = mem_y;
-            int screen_y = HEIGHT - 1 - mem_x;
+            int screen_y = mem_y;
+            int screen_x = HEIGHT - 1 - mem_x;
 
             if (screen_x < 0 || screen_x >= WIDTH || screen_y < 0 || screen_y >= HEIGHT) {
                 continue;  // Skip invalid pixels

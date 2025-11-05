@@ -7,7 +7,9 @@ class memory
 {
 private:
     u8 memory_bank[MEMORY_SIZE];
+    bool debug = false;
 public:
+    void set_debug_mode(bool enabled) { debug = enabled; }
     u8 read(u16 address);
     void write(u16 address, u8 data);
     bool load_rom(const char* path, u16 starting_address);

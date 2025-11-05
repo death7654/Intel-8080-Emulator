@@ -22,7 +22,7 @@ private:
     u8 e = 0; 
     u8 h = 0;
     u8 l = 0;
-    u8 f = 0;
+    u8 f = 0x02;
 
     u16 sp = 0;
     u16 pc = 0;
@@ -203,6 +203,7 @@ public:
     void rc();
     void jc();
     void in();
+    u8 in_port(u8 port);
     void cc();
     void sbi();
 
