@@ -11,9 +11,10 @@
         "/nologo",
         "/I", "${workspaceFolder}\\SDL3\\include",
         "${file}",
+        "/Fe:${workspaceFolder}\\..\\build\\SpaceInvaders.exe",
         "/link",
         "/LIBPATH:${workspaceFolder}\\SDL3\\lib\\x86",
-        "SDL3.lib"
+        "SDL3.lib",
       ],
       "options": {
         "cwd": "${fileDirname}"
