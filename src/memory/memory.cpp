@@ -3,42 +3,30 @@
 
 u8 memory::read(u16 address)
 {
-     if (debug) {
-            // CP/M: flat memory
-            return (address < MEMORY_SIZE) ? memory_bank[address] : 0xFF;
-        }
-        
-        // Normal mode: mirroring
-        if (address >= 0x4000) {
-            address = 0x2000 + ((address - 0x2000) & 0x1FFF);
-        }
-        
-        return (address < MEMORY_SIZE) ? memory_bank[address] : 0xFF;
-}
-
-void memory::write(u16 address, u8 data)
-{
-    if (debug)
-    {
-        // CP/M: flat memory, all writable
-        if (address < MEMORY_SIZE)
-        {
-            memory_bank[address] = data;
-        }
-        return;
-    }
-
-    // Normal mode: ROM protection and mirroring
     if (address >= 0x4000)
     {
         address = 0x2000 + ((address - 0x2000) & 0x1FFF);
     }
 
-    if (address >= 0x0000 && address <= 0x1FFF)
+    return (address < MEMORY_SIZE) ? memory_bank[address] : 0xFF;
+}
+
+void memory::write(u16 address, u8 data)
+{
+    // Handle mirroring
+    if (address >= 0x4000)
     {
-        return; // ROM area
+
+        address = 0x2000 + ((address - 0x2000) & 0x1FFF);
     }
 
+    // Ignore ROM writes
+    if (address <= 0x1FFF)
+    {
+        return;
+    }
+
+    // Write to the combined RAM/VRAM area
     if (address >= 0x2000 && address <= 0x3FFF)
     {
         memory_bank[address] = data;

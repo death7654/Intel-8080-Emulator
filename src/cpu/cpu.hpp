@@ -28,10 +28,11 @@ private:
     u16 sp = 0;
     u16 pc = 0;
 
-    u8 output;
-
     bool is_halted = false;
     bool interrupts = false;
+
+    u16 shift_register = 0;
+    int wanted_shifts = 0;
 
     u64 cycles = 0;
     memory* ram;

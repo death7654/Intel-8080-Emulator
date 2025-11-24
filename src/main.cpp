@@ -36,8 +36,6 @@ int main(void)
     //     0x0100,
     // };
 
-    // emu.MEMORY.set_debug_mode(true);
-
     // emu.MEMORY.write(0x0000, 0xC9);  // JMP opcode
     // emu.MEMORY.write(0x0001, 0x00);  // low byte of 0100h
     // emu.MEMORY.write(0x0002, 0x01);  // high byte of 0100h

@@ -129,27 +129,28 @@ void cpu::set_pc(u16 input)
     this->pc = input;
 }
 
-void cpu::generate_interrupt(int interrupt_id) {
-    if (!(this->interrupts)) {
+void cpu::generate_interrupt(int interrupt_id) 
+{
+    if (!this->interrupts) {
         return;
     }
 
-    this->interrupts = false;
+    this->interrupts = false; 
 
     int n_value = 0;
 
     if (interrupt_id == 1) {
         n_value = 1; 
     } else if (interrupt_id == 2) {
-        n_value = 2;
+        n_value = 2; 
     } else {
         return; 
     }
     
-    this->rst(n_value); 
+    this->is_halted = false; 
     
+    this->rst(n_value); 
 }
-
 u16 cpu::get_sp()
 {
     return this->sp;
@@ -1992,7 +1993,9 @@ void cpu::adi()
 void cpu::rst(int n)
 {
     u16 pc = this->pc;
-    push_value((pc >> 8), pc);
+    u8 upper_byte = (u8)(pc >> 8);
+    u8 lower_byte = (u8)(pc & 0xFF);
+    push_value(upper_byte, lower_byte);
 
     pc = 8 * n;
     this->pc = pc;
@@ -2151,6 +2154,16 @@ void cpu::out()
 {
     u8 port = fetch();
     this->cycles += 3;
+
+    switch(port)
+    {
+        case 2:
+            wanted_shifts = this->a & 0x07;
+            break;
+        case 4:
+            shift_register = (shift_register << 8) | this->a;
+            break;
+    }
 }
 
 void cpu::cnc()
@@ -2259,6 +2272,8 @@ u8 cpu::in_port(u8 port)
         return io->get_port1();
     case 0x02:
         return io->get_port2();
+    case 0x03:
+        return (shift_register >> wanted_shifts) & 0xFF;
     default:
         return 0x00; //
     }

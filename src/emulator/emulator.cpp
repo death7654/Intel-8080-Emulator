@@ -26,15 +26,19 @@ void emulator::run()
             u8 opcode = CPU.fetch();
             CPU.execute(opcode);
             u64 cycles_after = CPU.get_cycles();
+
+
             
             if (cycles_after <= cycles_before) {
                 std::cerr << "CPU error: cycles didn't advance" << std::endl;
                 is_running = false;
                 break;
             }
+
             
             u64 cycle_cost = cycles_after - cycles_before;
             cycles_this_frame += cycle_cost;
+    
 
             if (!mid_screen_interrupt_triggered && cycles_this_frame >= CYCLES_TO_MID_SCREEN) {
                 CPU.generate_interrupt(1);

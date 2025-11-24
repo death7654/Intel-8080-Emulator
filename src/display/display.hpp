@@ -8,18 +8,16 @@ extern "C"
 #include "../common.h"
 #include "../memory/memory.hpp"
 
-#define WIDTH 256
-#define HEIGHT 224
+#define WIDTH 224
+#define HEIGHT 256
 #define SCALE 3
 
 #define VRAM_SIZE 0x1C00
 #define VRAM_START 0x2400
 #define VRAM_END 0x4000
 
-#define WINDOW_W 800
-#define WINDOW_H 800 
-#define SCALED_GAME_W (WIDTH * SCALE) 
-#define SCALED_GAME_H (HEIGHT * SCALE) 
+#define WINDOW_W WIDTH * SCALE
+#define WINDOW_H HEIGHT * SCALE
 
 const u32 COLOR_ON  = 0xFFFFFFFF;
 const u32 COLOR_OFF = 0xFF000000;
