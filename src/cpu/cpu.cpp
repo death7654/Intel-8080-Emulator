@@ -2255,13 +2255,12 @@ u8 cpu::in_port(u8 port)
     {
     case 0x00:
         return 0x00;
-
     case 0x01:
-        // Supersoft timing test expects bit 6 (0x40) to toggle
-        toggle = !toggle;
-        return 0x00; // Flip bit 6 every read
+        return io->get_port1();
+    case 0x02:
+        return io->get_port2();
     default:
-        return 0x00; // Default: no input
+        return 0x00; //
     }
 }
 

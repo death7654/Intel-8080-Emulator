@@ -2,6 +2,7 @@
 
 #include "../common.h"
 #include "../memory/memory.hpp"
+#include "../input/input.hpp"
 
 
 // flags: bits 5 and 3 are always 0, bit 1 is always 1
@@ -27,7 +28,6 @@ private:
     u16 sp = 0;
     u16 pc = 0;
 
-    u8 input;
     u8 output;
 
     bool is_halted = false;
@@ -35,9 +35,10 @@ private:
 
     u64 cycles = 0;
     memory* ram;
+    input* io;
 
 public:
-    cpu(memory* mem); 
+    cpu(memory* mem, input* INPUT); 
     ~cpu();
 
     u64 get_cycles();
@@ -240,7 +241,7 @@ public:
 
 };
 
-cpu::cpu(memory* mem) : ram(mem)
+cpu::cpu(memory* mem, input* INPUT) : ram(mem), io(INPUT)
 {
 
 }

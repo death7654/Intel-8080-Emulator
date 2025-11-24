@@ -14,6 +14,8 @@ void emulator::run()
     while(is_running)
     {
         Uint64 frame_start = SDL_GetTicks();
+
+        INPUT.update_input();
         
         int cycles_this_frame = 0;
         bool mid_screen_interrupt_triggered = false;
@@ -58,5 +60,5 @@ void emulator::run()
 
 bool emulator::handle_events()
 {
-    return true;
+    return INPUT.update_input();
 }
