@@ -16,6 +16,11 @@ extern "C"
 #define VRAM_START 0x2400
 #define VRAM_END 0x4000
 
+#define WINDOW_W 800
+#define WINDOW_H 800 
+#define SCALED_GAME_W (WIDTH * SCALE) 
+#define SCALED_GAME_H (HEIGHT * SCALE) 
+
 const u32 COLOR_ON  = 0xFFFFFFFF;
 const u32 COLOR_OFF = 0xFF000000;
 
@@ -27,7 +32,7 @@ private:
     SDL_Renderer *renderer = nullptr;
     SDL_Texture *texture = nullptr;
 
-    u32 pixel_buffer[HEIGHT * WIDTH]; // space invaders has a screen that has been rotated by 90 degrees
+    u32 pixel_buffer[WIDTH * HEIGHT]; // space invaders has a screen that has been rotated by 90 degrees
 
     memory* ram;
 public:
@@ -51,8 +56,8 @@ void display::initialize_sdl()
 
 
     window = SDL_CreateWindow("Space Invaders Emulator",
-                              WIDTH * SCALE,
-                              HEIGHT * SCALE,
+                              WINDOW_W,
+                              WINDOW_H,
                               0);
 
     if (!window) {
@@ -76,7 +81,7 @@ void display::initialize_sdl()
 display::display(memory* mem) : ram(mem)
 {
     memset(pixel_buffer, 0, sizeof(pixel_buffer));
-    //initialize_sdl();
+    initialize_sdl();
 }
 
 display::~display()

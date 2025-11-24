@@ -35,19 +35,19 @@ void emulator::run()
             cycles_this_frame += cycle_cost;
 
             if (!mid_screen_interrupt_triggered && cycles_this_frame >= CYCLES_TO_MID_SCREEN) {
-                CPU.generate_interrupt(2);
+                CPU.generate_interrupt(1);
                 mid_screen_interrupt_triggered = true;
             }
         }
         
         if (!is_running) break;
         
-        CPU.generate_interrupt(1);
+        CPU.generate_interrupt(2);
         
-        //DISPLAY.draw_screen();
-        //DISPLAY.present();
+        DISPLAY.draw_screen();
+        DISPLAY.present();
         
-        //is_running = handle_events();
+        is_running = handle_events();
         
         Uint64 frame_time = SDL_GetTicks() - frame_start;
         if (frame_time < MS_PER_FRAME) {
@@ -58,5 +58,5 @@ void emulator::run()
 
 bool emulator::handle_events()
 {
-    return false;
+    return true;
 }

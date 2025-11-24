@@ -55,7 +55,29 @@ u64 cpu::get_cycles()
 void cpu::handle_bdos()
 {
     u8 func = get_c();
-    //printf("[BDOS] Function, %d\n", func);
+
+    // Retrieve all 16-bit register pair values
+    u16 af = (static_cast<u16>(get_a()) << 8) | get_f();
+    u16 bc = (static_cast<u16>(get_b()) << 8) | get_c();
+    u16 de = (static_cast<u16>(get_d()) << 8) | get_e();
+    u16 hl = (static_cast<u16>(get_h()) << 8) | get_l();
+    
+    // Get PC, SP, and Cycles
+    u16 pc_val = this->pc;
+    u16 sp_val = get_sp();
+    unsigned int cyc_val = this->cycles; // Assuming 'cycles' is accessible
+
+    // Print the state using printf with hexadecimal formatting
+    // %04X ensures the hexadecimal value is printed with 4 uppercase digits,
+    // padding with leading zeros if necessary.
+    printf("PC: %04X, AF: %04X, BC: %04X, DE: %04X, HL: %04X, SP: %04X, CYC: %u\n",
+           pc_val, 
+           af, 
+           bc, 
+           de, 
+           hl, 
+           sp_val, 
+           cyc_val);
 
     switch (func)
     {
@@ -74,7 +96,7 @@ void cpu::handle_bdos()
     case 9: // Print $-terminated string
     {
         u16 addr = (get_d() << 8) | get_e();
-        printf("[BDOS] Print string from 0x%04X\n", addr);
+        //printf("[BDOS] Print string from 0x%04X\n", addr);
 
         int count = 0;
         while (count++ < 1024) // safety guard
@@ -1244,16 +1266,16 @@ void cpu::rlc()
 // double add 16 bit reg
 void cpu::dad(const u8 &upper_a_reg, const u8 &lower_a_reg)
 {
-    u16 a = (static_cast<u16>(upper_a_reg) << 8) | lower_a_reg;
+    u16 rp_value = (static_cast<u16>(upper_a_reg) << 8) | lower_a_reg; 
+
+    u16 hl_value = get_hl();
     
-    u16 b = get_hl();
-    
-    u32 result = a + b;
+    u32 result = hl_value + rp_value; 
 
     set_hl(static_cast<u16>(result));
     
     u8 flags = get_f();
- 
+    
     flags &= ~C_FLAG; 
 
     if (result > 0xFFFF)
@@ -1262,22 +1284,21 @@ void cpu::dad(const u8 &upper_a_reg, const u8 &lower_a_reg)
     }
 
     set_f(flags);
-    this->cycles += 6;
-    // takes 10 cycles
+    
+    this->cycles += 6; 
 }
 
 // double add stack pointer
 void cpu::dad_sp()
 {
-    u16 sp = get_sp();
-    u16 hl = get_hl();
-    u32 result = sp + hl;
-
-    set_c_flag(result > 0xFFFF);
-
+    u16 sp_value = get_sp();
+    u16 hl_value = get_hl();
+    
+    u32 result = hl_value + sp_value;
     set_hl(static_cast<u16>(result));
-
-    u8 flags = get_f(); 
+    
+    
+    u8 flags = get_f();
     
     flags &= ~C_FLAG; 
 
@@ -1289,7 +1310,6 @@ void cpu::dad_sp()
     set_f(flags);
 
     this->cycles += 6;
-    // 10 cycles
 }
 
 // load data from memory at address found in 16 bit register pair
@@ -1391,13 +1411,13 @@ void cpu::daa()
     u8 a = get_a();
     u8 flags = get_f();
 
+    u8 low_nibble = a & 0x0F;
     bool original_carry = (flags & C_FLAG) != 0;
     bool original_aux_carry = (flags & A_FLAG) != 0;
-
     u8 correction = 0x00;
-    bool new_carry = original_carry;
 
-    if ((a & 0x0F) > 0x09 || original_aux_carry)
+    // First, check the lower nibble
+    if (low_nibble > 0x09 || original_aux_carry)
     {
         correction |= 0x06;
         flags |= A_FLAG;
@@ -1407,34 +1427,31 @@ void cpu::daa()
         flags &= ~A_FLAG;
     }
 
-    if ((a > 0x99) || original_carry)
+    // Second, check the upper nibble (or if a carry was set)
+    if (a > 0x99 || original_carry)
     {
         correction |= 0x60;
-        new_carry = true;
-    }
-    else if ((a + (correction & 0x0F)) > 0x9F)
-    {
-        correction |= 0x60;
-        new_carry = true;
-    }
-
-    a += correction;
-    set_a(a);
-
-    set_s_flag(a);
-    set_z_flag(a);
-    set_p_flag(a);
-
-    if (new_carry)
-    {
+        // The DAA operation sets the carry flag if this correction occurs
         flags |= C_FLAG;
     }
     else
     {
-        flags &= ~C_FLAG;
+        // Only clear the carry flag if it was NOT set previously and no
+        // high correction occurred. If it was set, it stays set.
+        // If a correction occurs, it is set above.
     }
 
+    // Now, perform the addition
+    a += correction;
+    set_a(a);
+
+    // Update S, Z, P flags based on the FINAL value of A
+    set_s_flag(a);
+    set_z_flag(a);
+    set_p_flag(a);
+
     set_f(flags);
+    this->cycles += 1;
 }
 
 // loads memory into a specified address into 16 bit address HL
@@ -1553,17 +1570,20 @@ void cpu::halt()
 // add to reg a with the specified reg
 void cpu::add(u8 &reg)
 {
-    u8 old_a = get_a();
-    u16 result = static_cast<u16>(this->a) + static_cast<u16>(reg);
-    u8 a = static_cast<u8>(result);
-    set_a(a);
+    u8 old_a = get_a(); 
+    
+    u16 result = static_cast<u16>(old_a) + static_cast<u16>(reg);
+    
+    u8 final_a = static_cast<u8>(result);
+    set_a(final_a);
 
-    set_z_flag(this->a);
-    set_s_flag(this->a);
-    set_p_flag(this->a);
+    set_z_flag(final_a);
+    set_s_flag(final_a);
+    set_p_flag(final_a);
+    
     set_c_flag(result > 0xFF);
     
-    set_a_flag_add_type(old_a, reg, false); 
+    set_a_flag_add_type(old_a, reg, false);
     // 4 cycles
 }
 
@@ -1977,7 +1997,7 @@ void cpu::rst(int n)
     pc = 8 * n;
     this->pc = pc;
 
-    // 4 cycles
+    // 11 cycles
 }
 
 // resets the pc to the top of the stack if the zero flag is set
@@ -2064,11 +2084,13 @@ void cpu::call()
     // Push return address onto stack
     push_value((this->pc >> 8), this->pc & 0xFF);
 
-    if (addr == 0x0005) {
-        handle_bdos();
-    } else {
-        this->pc = addr;
-    }
+    // if (addr == 0x0005) {
+    //     handle_bdos();
+    // } else {
+    //     this->pc = addr;
+    // }
+
+    this->pc = addr;
     // 17 cycles
 }
 
@@ -2237,7 +2259,7 @@ u8 cpu::in_port(u8 port)
     case 0x01:
         // Supersoft timing test expects bit 6 (0x40) to toggle
         toggle = !toggle;
-        return toggle ? 0x40 : 0x00; // Flip bit 6 every read
+        return 0x00; // Flip bit 6 every read
     default:
         return 0x00; // Default: no input
     }
