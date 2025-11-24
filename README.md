@@ -30,12 +30,13 @@ A Space Invaders emulator written in C++ that emulates the original Intel 8080 a
 
 - Visual Studio Code
 - C++ compiler supporting C++20
-- SDL3 (installed and linked)
-- Space Invaders ROM files (not included)
+- SDL3
+- Space Invaders ROM files
 
 ## Building and Running
 
-This project was built and run directly through Visual Studio Code using its built-in Run and Debug functionality, without CMake or external build systems.
+- This project was built and run directly through Visual Studio Code using its built-in Run and Debug functionality, without CMake or external build systems.
+- If you get an error, move everything from the dependencies folder into the build folder
 
 Steps:
 1. Open the project folder in Visual Studio Code
