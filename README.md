@@ -2,6 +2,11 @@
 
 A Space Invaders emulator written in C++ that emulates the original Intel 8080 arcade hardware. The emulator supports full gameplay including both one-player and two-player modes, accurate CPU behavior, correct video memory decoding, and real-time input through SDL3. Audio has not yet been implemented.
 
+## Screenshots
+<img width="338" height="407" alt="image" src="https://github.com/user-attachments/assets/67e2e9ea-71d1-49c9-a56f-8e29e7c2df27" />
+<img width="338" height="407" alt="image" src="https://github.com/user-attachments/assets/0ef88ba2-5103-4362-95a5-942cb1323023" />
+<img width="338" height="407" alt="image" src="https://github.com/user-attachments/assets/8743d8c4-a5b6-47d1-ae7e-a4be8f036ac9" />
+
 ## Features
 
 - Full Intel 8080 CPU emulation
@@ -45,10 +50,6 @@ Steps:
 4. Press **Run** or **Start Debugging** inside VS Code
 5. Place the ROM files in the expected ROM directory and start the game
 
-## Screenshots
-<img width="338" height="407" alt="image" src="https://github.com/user-attachments/assets/67e2e9ea-71d1-49c9-a56f-8e29e7c2df27" />
-<img width="338" height="407" alt="image" src="https://github.com/user-attachments/assets/0ef88ba2-5103-4362-95a5-942cb1323023" />
-<img width="338" height="407" alt="image" src="https://github.com/user-attachments/assets/8743d8c4-a5b6-47d1-ae7e-a4be8f036ac9" />
 
 ## Acknowledgements
 
